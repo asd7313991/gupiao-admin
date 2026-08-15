@@ -78,7 +78,11 @@ docker compose down
 docker compose --profile production up --build production
 ```
 
-开发环境访问 http://localhost:5173，生产静态站点访问 http://localhost:8080。
+开发环境访问 http://localhost:3006，Go API 可通过 http://localhost:8081 访问，PostgreSQL 与 Redis 分别映射到本机 `5432` 和 `6379`。首次启动时，后端会自动执行数据库迁移并初始化数据。当前前端仍使用项目原有的 Mock API；Go 后端采用 `/api/v1` 接口规范，需要新增前端 API 适配后才能作为前端数据源。
+
+可在根目录 `.env.local` 中设置 `POSTGRES_PASSWORD` 和 `REDIS_PASSWORD` 来覆盖仅用于本地开发的默认密码。
+
+首次或后续执行 `docker compose up --build` 时，Go 服务会同步 `server/db/pgdb/system/stock_menu_sync.go` 定义的 Stock Admin 菜单和按钮权限。该同步会替换本地数据库中已有的菜单、按钮权限及其关联数据，请勿在包含生产数据的数据库上执行。
 
 ## 精简版本
 

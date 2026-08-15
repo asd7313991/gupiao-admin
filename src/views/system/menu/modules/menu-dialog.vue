@@ -71,6 +71,7 @@
 
   interface MenuFormData {
     id: number
+    parentId: number
     name: string
     path: string
     label: string
@@ -122,6 +123,7 @@
   const form = reactive<MenuFormData & { menuType: 'menu' | 'button' }>({
     menuType: 'menu',
     id: 0,
+    parentId: 0,
     name: '',
     path: '',
     label: '',
@@ -294,6 +296,7 @@
     if (form.menuType === 'menu') {
       const row = props.editData
       form.id = row.id || 0
+      form.parentId = row.parentId || 0
       form.name = formatMenuTitle(row.meta?.title || '')
       form.path = row.path || ''
       form.label = row.name || ''
@@ -315,6 +318,8 @@
       form.isFullPage = row.meta?.isFullPage ?? false
     } else {
       const row = props.editData
+      form.id = row.id || 0
+      form.parentId = row.menuId || 0
       form.authName = row.title || ''
       form.authLabel = row.authMark || ''
       form.authIcon = row.icon || ''
