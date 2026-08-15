@@ -63,6 +63,23 @@ pnpm dev
 pnpm build
 ```
 
+## Docker 启动
+
+需要先安装 Docker Desktop。
+
+```bash
+# 启动本地开发环境（支持源代码热更新）
+docker compose up --build
+
+# 停止并清理容器
+docker compose down
+
+# 构建并启动生产静态站点
+docker compose --profile production up --build production
+```
+
+开发环境访问 http://localhost:5173，生产静态站点访问 http://localhost:8080。
+
 ## 精简版本
 
 项目内置精简脚本，可快速移除项目中的演示数据，让开发者获得一个可快速开发的基础项目

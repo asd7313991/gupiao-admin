@@ -2,6 +2,7 @@
   "name": "art-design-pro",
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.17.1",
   "engines": {
     "node": ">=20.19.0",
     "pnpm": ">=8.8.0"
