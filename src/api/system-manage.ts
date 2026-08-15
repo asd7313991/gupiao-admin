@@ -110,6 +110,7 @@ export interface Customer {
   id_card_front?: string
   id_card_back?: string
   verification_video?: string
+  verification_remark?: string
   remark?: string
   created_at: string
   updated_at: string
@@ -163,6 +164,18 @@ export function updateCustomerStatus(id: number, status: number) {
 export function updateCustomerFundStatus(id: number, status: number) {
   return request.put<void>({ url: `${customerUrl}/fund-status`, params: { id, status } })
 }
+export function updateCustomerBank(data: { id: number; bank_name: string; bank_card: string; bank_address?: string }) {
+  return request.put<void>({ url: `${customerUrl}/bank`, params: data })
+}
+export function reviewCustomerVerification(data: { id: number; verified: number; remark?: string }) {
+  return request.put<void>({ url: `${customerUrl}/verification/review`, params: data })
+}
+export function batchReviewCustomerVerification(ids: number[], remark?: string) {
+  return request.put<void>({ url: `${customerUrl}/verification/review/batch`, params: { ids, remark } })
+}
+export function batchUpdateCustomerStatus(ids: number[], status: number) {
+  return request.put<void>({ url: `${customerUrl}/status/batch`, params: { ids, status } })
+}
 
 export interface CustomerDevice { id: number; customer_id: number; device_type: string; brand: string; device_model: string; device_id: string; api_base_url: string; system: string; app_version: string; blocked: number; last_login: number }
 export interface CustomerFundRecord { id: number; customer_id: number; type: string; direction: string; currency: string; amount: number; balance: number; remark: string; created_at: string }
@@ -172,6 +185,9 @@ export function fetchCustomerDevices(phone?: string) {
 }
 export function updateCustomerDeviceBlocked(id: number, blocked: number) {
   return request.put<void>({ url: `${customerUrl}/devices/block`, params: { id, blocked } })
+}
+export function batchUpdateCustomerDeviceBlocked(data: { phone?: string; device_id?: string; api_base_url?: string; blocked: number }) {
+  return request.put<{ updated: number }>({ url: `${customerUrl}/devices/block/batch`, params: data })
 }
 export function fetchCustomerFundRecords(phone?: string) {
   return request.get<CustomerFundRecord[]>({ url: `${customerUrl}/fund-records`, params: { phone } })
