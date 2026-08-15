@@ -15,6 +15,18 @@ export const userRoutes: AppRouteRecord = {
       name: 'UserList',
       component: '/user/list',
       meta: { title: '用户列表', keepAlive: true }
+    },
+    {
+      path: 'devices', name: 'UserDevices', component: '/user/devices', meta: { title: '接口列表', keepAlive: true }
+    },
+    {
+      path: 'funds', name: 'UserFunds', component: '/user/funds', meta: { title: '资金流水', keepAlive: true }
+    },
+    {
+      path: 'banks', name: 'UserBanks', component: '/user/banks', meta: { title: '银行卡', keepAlive: true }
+    },
+    {
+      path: 'verification', name: 'UserVerification', component: '/user/verification', meta: { title: '实名认证', keepAlive: true }
     }
   ]
 }

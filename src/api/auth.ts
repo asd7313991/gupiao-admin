@@ -23,11 +23,15 @@ export function fetchLogin(params: Api.Auth.LoginParams) {
  * @returns 用户信息
  */
 export function fetchGetUserInfo() {
-  return request.get<Api.Auth.UserInfo>({
-    url: '/api/user/info'
-    // 自定义请求头
-    // headers: {
-    //   'X-Custom-Header': 'your-custom-value'
-    // }
-  })
+  return request
+    .get<{ ID: number; Username: string; Name: string; Account: string }>({
+      url: '/server-api/private/admin/system/user/info'
+    })
+    .then((data) => ({
+      userId: data.ID,
+      userName: data.Username || data.Name || data.Account,
+      email: '',
+      roles: ['R_SUPER'],
+      buttons: []
+    }))
 }
