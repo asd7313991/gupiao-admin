@@ -164,6 +164,9 @@ export function updateCustomerStatus(id: number, status: number) {
 export function updateCustomerFundStatus(id: number, status: number) {
   return request.put<void>({ url: `${customerUrl}/fund-status`, params: { id, status } })
 }
+export function updateCustomerPassword(data: { id: number; password: string; type: 'login' | 'trade' }) {
+  return request.put<void>({ url: `${customerUrl}/password`, params: data })
+}
 export function updateCustomerBank(data: { id: number; bank_name: string; bank_card: string; bank_address?: string }) {
   return request.put<void>({ url: `${customerUrl}/bank`, params: data })
 }
@@ -192,3 +195,29 @@ export function batchUpdateCustomerDeviceBlocked(data: { phone?: string; device_
 export function fetchCustomerFundRecords(phone?: string) {
   return request.get<CustomerFundRecord[]>({ url: `${customerUrl}/fund-records`, params: { phone } })
 }
+
+const administratorUrl = '/server-api/private/admin/system/user'
+
+export function updateAdministratorPassword(data: { id: number; password: string }) {
+  return request.put<void>({ url: `${administratorUrl}/admin-password`, params: data })
+}
+
+export function resetAdministratorGoogleAuthSecret(id: number) {
+  return request.put<{ secret: string; enabled: boolean }>({
+    url: `${administratorUrl}/google-auth-secret/reset`,
+    params: { id }
+  })
+}
+
+export interface TradePosition { id: number; customer_id: number; symbol: string; stock_name: string; currency: string; position_qty: number; available_qty: number; current_price: number; cost_price: number; total_cost: number; market_value: number; profit_loss: number; profit_rate: number; status: number; buy_at: number }
+const tradeUrl = '/server-api/private/admin/platform/trade/positions'
+export function fetchTradePositions(params: { phone?: string; symbol?: string; stock_name?: string; status?: number }) { return request.get<TradePosition[]>({ url: tradeUrl, params }) }
+export function saveTradePosition(data: Partial<TradePosition> & { customer_id: number; symbol: string }) { return data.id ? request.put<TradePosition>({ url: tradeUrl, params: data }) : request.post<TradePosition>({ url: tradeUrl, params: data }) }
+export function deleteTradePosition(id: number) { return request.del<void>({ url: tradeUrl, params: { id } }) }
+
+export interface TradeRecord { id: number; customer_id: number; customer_name: string; customer_phone: string; symbol: string; stock_name: string; currency: string; direction: '买入' | '卖出'; trade_price: number; quantity: number; amount: number; stamp_duty: number; transfer_fee: number; commission: number; remark: string; trade_at: number }
+export interface TradeRecordPage { records: TradeRecord[]; total: number; page: number; page_size: number }
+const tradeRecordUrl = '/server-api/private/admin/platform/trade/records'
+export function fetchTradeRecords(params: { page: number; pageSize: number; phone?: string; symbol?: string; direction?: string }) { return request.get<TradeRecordPage>({ url: tradeRecordUrl, params }) }
+export function saveTradeRecord(data: Partial<TradeRecord> & { customer_id: number; symbol: string; direction: '买入' | '卖出' }) { return data.id ? request.put<TradeRecord>({ url: tradeRecordUrl, params: data }) : request.post<TradeRecord>({ url: tradeRecordUrl, params: data }) }
+export function deleteTradeRecord(id: number) { return request.del<void>({ url: tradeRecordUrl, params: { id } }) }
