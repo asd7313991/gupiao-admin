@@ -6,12 +6,16 @@ import request from '@/utils/http'
  * @returns 登录响应
  */
 export function fetchLogin(params: Api.Auth.LoginParams) {
-  return request.post<Api.Auth.LoginResponse>({
-    url: '/api/auth/login',
-    params
-    // showSuccessMessage: true // 显示成功消息
-    // showErrorMessage: false // 不显示错误消息
-  })
+  return request
+    .post<{ access_token: string }>({
+      url: '/server-api/private/admin/system/user/login',
+      params: {
+        tenant_code: 'platform',
+        account: params.userName.toLowerCase(),
+        password: params.password
+      }
+    })
+    .then((data) => ({ token: data.access_token, refreshToken: '' }))
 }
 
 /**
