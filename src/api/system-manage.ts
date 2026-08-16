@@ -241,3 +241,12 @@ export function fetchAppArticles(params: { page: number; pageSize: number; title
 export function saveAppArticle(data: Partial<AppArticle> & { title: string; type: string; content: string; status: number }) { return data.id ? request.put<AppArticle>({ url: articleUrl, params: data }) : request.post<AppArticle>({ url: articleUrl, params: data }) }
 export function deleteAppArticle(id: number) { return request.del<void>({ url: articleUrl, params: { id } }) }
 export function updateAppArticleStatus(id: number, status: number) { return request.put<void>({ url: `${articleUrl}/status`, params: { id, status } }) }
+
+export interface StockSecurity { id: number; code: string; symbol: string; market: string; name: string; exchange: string; last_price: number; change_rate: number; status: number; source: string; updated_at: number }
+const stockUrl = '/server-api/private/admin/platform/stock/securities'
+export function fetchStockSecurities(params: { page: number; pageSize: number; symbol?: string; name?: string; market?: string; exchange?: string; cursor?: number }) { return request.get<{ records: StockSecurity[]; total: number; next_cursor: number }>({ url: stockUrl, params }) }
+export function fetchStockExchanges() { return request.get<string[]>({ url: `${stockUrl}/exchanges` }) }
+export function saveStockSecurity(data: Partial<StockSecurity> & { code: string; name: string }) { return data.id ? request.put<StockSecurity>({ url: stockUrl, params: data }) : request.post<StockSecurity>({ url: stockUrl, params: data }) }
+export function deleteStockSecurity(id: number) { return request.del<void>({ url: stockUrl, params: { id } }) }
+export function updateStockSecurityStatus(id: number, status: number) { return request.put<void>({ url: `${stockUrl}/status`, params: { id, status } }) }
+export function syncEastmoneySecurities() { return request.post<{ synced: number; source: string }>({ url: `${stockUrl}/sync/eastmoney`, params: {} }) }

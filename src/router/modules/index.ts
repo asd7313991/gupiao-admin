@@ -4,6 +4,7 @@ import { systemRoutes } from './system'
 import { userRoutes } from './user'
 import { tradeRoutes } from './trade'
 import { settingsRoutes } from './settings'
+import { stockRoutes } from './stock'
 import { resultRoutes } from './result'
 import { exceptionRoutes } from './exception'
 
@@ -15,6 +16,7 @@ export const routeModules: AppRouteRecord[] = [
   userRoutes,
   tradeRoutes,
   settingsRoutes,
+  stockRoutes,
   systemRoutes,
   resultRoutes,
   exceptionRoutes
