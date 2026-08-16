@@ -221,3 +221,16 @@ const tradeRecordUrl = '/server-api/private/admin/platform/trade/records'
 export function fetchTradeRecords(params: { page: number; pageSize: number; phone?: string; symbol?: string; direction?: string }) { return request.get<TradeRecordPage>({ url: tradeRecordUrl, params }) }
 export function saveTradeRecord(data: Partial<TradeRecord> & { customer_id: number; symbol: string; direction: '买入' | '卖出' }) { return data.id ? request.put<TradeRecord>({ url: tradeRecordUrl, params: data }) : request.post<TradeRecord>({ url: tradeRecordUrl, params: data }) }
 export function deleteTradeRecord(id: number) { return request.del<void>({ url: tradeRecordUrl, params: { id } }) }
+
+export interface AppSystemSetting { trade: Record<string, any>; risk: Record<string, any>; recharge: Record<string, any>; limits: Record<string, any>; links: Record<string, any> }
+const systemSettingUrl = '/server-api/private/admin/platform/setting/system'
+export function fetchAppSystemSetting() { return request.get<AppSystemSetting>({ url: systemSettingUrl }) }
+export function saveAppSystemSetting(data: AppSystemSetting) { return request.put<void>({ url: systemSettingUrl, params: data }) }
+
+export interface AppNotice { id: number; title: string; content: string; popup: boolean; recipient_ids: string; status: number; created_at: string; updated_at: string }
+const noticeUrl = '/server-api/private/admin/platform/setting/notices'
+export function fetchAppNotices(params: { page: number; pageSize: number; title?: string; popup?: string; status?: string }) { return request.get<{ records: AppNotice[]; total: number }>({ url: noticeUrl, params }) }
+export interface AppNoticePayload { id?: number; title: string; content: string; popup: boolean; recipient_ids: number[]; status: number }
+export function saveAppNotice(data: AppNoticePayload) { return data.id ? request.put<AppNotice>({ url: noticeUrl, params: data }) : request.post<AppNotice>({ url: noticeUrl, params: data }) }
+export function deleteAppNotice(id: number) { return request.del<void>({ url: noticeUrl, params: { id } }) }
+export function updateAppNoticeStatus(id: number, status: number) { return request.put<void>({ url: `${noticeUrl}/status`, params: { id, status } }) }

@@ -3,6 +3,7 @@ import { dashboardRoutes } from './dashboard'
 import { systemRoutes } from './system'
 import { userRoutes } from './user'
 import { tradeRoutes } from './trade'
+import { settingsRoutes } from './settings'
 import { resultRoutes } from './result'
 import { exceptionRoutes } from './exception'
 
@@ -13,6 +14,7 @@ export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
   userRoutes,
   tradeRoutes,
+  settingsRoutes,
   systemRoutes,
   resultRoutes,
   exceptionRoutes

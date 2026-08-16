@@ -1,0 +1,2 @@
+import { AppRouteRecord } from '@/types/router'
+export const settingsRoutes: AppRouteRecord = { path: '/settings', name: 'Settings', component: '/index/index', meta: { title: '应用配置', icon: 'ri-settings-3-line', roles: ['R_SUPER', 'R_ADMIN'] }, children: [{ path: 'system', name: 'SettingsSystem', component: '/settings/system', meta: { title: '系统设置', keepAlive: true } }, { path: 'notice', name: 'SettingsNotice', component: '/settings/notice', meta: { title: '公告管理', keepAlive: true } }] }
