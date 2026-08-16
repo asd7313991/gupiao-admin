@@ -234,3 +234,10 @@ export interface AppNoticePayload { id?: number; title: string; content: string;
 export function saveAppNotice(data: AppNoticePayload) { return data.id ? request.put<AppNotice>({ url: noticeUrl, params: data }) : request.post<AppNotice>({ url: noticeUrl, params: data }) }
 export function deleteAppNotice(id: number) { return request.del<void>({ url: noticeUrl, params: { id } }) }
 export function updateAppNoticeStatus(id: number, status: number) { return request.put<void>({ url: `${noticeUrl}/status`, params: { id, status } }) }
+
+export interface AppArticle { id: number; title: string; type: string; content: string; status: number; created_at: string; updated_at: string }
+const articleUrl = '/server-api/private/admin/platform/setting/articles'
+export function fetchAppArticles(params: { page: number; pageSize: number; title?: string; status?: string }) { return request.get<{ records: AppArticle[]; total: number }>({ url: articleUrl, params }) }
+export function saveAppArticle(data: Partial<AppArticle> & { title: string; type: string; content: string; status: number }) { return data.id ? request.put<AppArticle>({ url: articleUrl, params: data }) : request.post<AppArticle>({ url: articleUrl, params: data }) }
+export function deleteAppArticle(id: number) { return request.del<void>({ url: articleUrl, params: { id } }) }
+export function updateAppArticleStatus(id: number, status: number) { return request.put<void>({ url: `${articleUrl}/status`, params: { id, status } }) }
