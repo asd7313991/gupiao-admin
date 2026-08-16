@@ -222,7 +222,7 @@ export function fetchTradeRecords(params: { page: number; pageSize: number; phon
 export function saveTradeRecord(data: Partial<TradeRecord> & { customer_id: number; symbol: string; direction: '买入' | '卖出' }) { return data.id ? request.put<TradeRecord>({ url: tradeRecordUrl, params: data }) : request.post<TradeRecord>({ url: tradeRecordUrl, params: data }) }
 export function deleteTradeRecord(id: number) { return request.del<void>({ url: tradeRecordUrl, params: { id } }) }
 
-export interface AppSystemSetting { trade: Record<string, any>; risk: Record<string, any>; recharge: Record<string, any>; limits: Record<string, any>; links: Record<string, any> }
+export interface AppSystemSetting { trade: Record<string, any>; stockSync: Record<string, any>; risk: Record<string, any>; recharge: Record<string, any>; limits: Record<string, any>; links: Record<string, any> }
 const systemSettingUrl = '/server-api/private/admin/platform/setting/system'
 export function fetchAppSystemSetting() { return request.get<AppSystemSetting>({ url: systemSettingUrl }) }
 export function saveAppSystemSetting(data: AppSystemSetting) { return request.put<void>({ url: systemSettingUrl, params: data }) }
@@ -242,11 +242,20 @@ export function saveAppArticle(data: Partial<AppArticle> & { title: string; type
 export function deleteAppArticle(id: number) { return request.del<void>({ url: articleUrl, params: { id } }) }
 export function updateAppArticleStatus(id: number, status: number) { return request.put<void>({ url: `${articleUrl}/status`, params: { id, status } }) }
 
-export interface StockSecurity { id: number; code: string; symbol: string; market: string; name: string; exchange: string; last_price: number; change_rate: number; status: number; source: string; updated_at: number }
+export interface StockSecurity { id: number; code: string; symbol: string; market: string; name: string; exchange: string; board: string; last_price: number; change_rate: number; status: number; source: string; updated_at: number }
 const stockUrl = '/server-api/private/admin/platform/stock/securities'
-export function fetchStockSecurities(params: { page: number; pageSize: number; symbol?: string; name?: string; market?: string; exchange?: string; cursor?: number }) { return request.get<{ records: StockSecurity[]; total: number; next_cursor: number }>({ url: stockUrl, params }) }
+export function fetchStockSecurities(params: { page: number; pageSize: number; symbol?: string; name?: string; market?: string; exchange?: string; board?: string; cursor?: number; sort_by?: 'id' | 'last_price' | 'change_rate'; sort_order?: 'asc' | 'desc' }) { return request.get<{ records: StockSecurity[]; total: number; next_cursor: number }>({ url: stockUrl, params }) }
 export function fetchStockExchanges() { return request.get<string[]>({ url: `${stockUrl}/exchanges` }) }
+export function fetchStockBoards() { return request.get<string[]>({ url: `${stockUrl}/boards` }) }
 export function saveStockSecurity(data: Partial<StockSecurity> & { code: string; name: string }) { return data.id ? request.put<StockSecurity>({ url: stockUrl, params: data }) : request.post<StockSecurity>({ url: stockUrl, params: data }) }
 export function deleteStockSecurity(id: number) { return request.del<void>({ url: stockUrl, params: { id } }) }
 export function updateStockSecurityStatus(id: number, status: number) { return request.put<void>({ url: `${stockUrl}/status`, params: { id, status } }) }
 export function syncEastmoneySecurities() { return request.post<{ synced: number; source: string }>({ url: `${stockUrl}/sync/eastmoney`, params: {} }) }
+
+export interface FinanceRecharge { id: number; customer_id: number; customer_name: string; customer_phone: string; amount: number; currency: string; method: string; voucher: string; status: number; remark: string; failure_reason: string; created_at: string; reviewed_at: number }
+export interface FinanceWithdrawal { id: number; customer_id: number; customer_name: string; customer_phone: string; amount: number; currency: string; method: string; bank_name: string; bank_card: string; bank_address: string; status: number; failure_reason: string; created_at: string; reviewed_at: number }
+const financeUrl = '/server-api/private/admin/platform/finance'
+export function fetchFinanceRecharges(params: { page: number; pageSize: number; phone?: string; name?: string; status?: string }) { return request.get<{ records: FinanceRecharge[]; total: number }>({ url: `${financeUrl}/recharges`, params }) }
+export function saveFinanceRecharge(data: Partial<FinanceRecharge> & { customer_id: number; amount: number }) { return data.id ? request.put<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data }) : request.post<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data }) }
+export function fetchFinanceWithdrawals(params: { page: number; pageSize: number; phone?: string; name?: string; status?: string }) { return request.get<{ records: FinanceWithdrawal[]; total: number }>({ url: `${financeUrl}/withdrawals`, params }) }
+export function saveFinanceWithdrawal(data: Partial<FinanceWithdrawal> & { customer_id: number; amount: number }) { return data.id ? request.put<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data }) : request.post<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data }) }
