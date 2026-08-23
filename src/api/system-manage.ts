@@ -70,7 +70,9 @@ export function createServerMenu(data: ServerMenuPayload) {
   return request.post<ServerMenu>({ url: serverMenuUrl, params: data })
 }
 
-export function updateServerMenu(data: Required<Pick<ServerMenuPayload, 'id'>> & ServerMenuPayload) {
+export function updateServerMenu(
+  data: Required<Pick<ServerMenuPayload, 'id'>> & ServerMenuPayload
+) {
   return request.put<ServerMenu>({ url: serverMenuUrl, params: data })
 }
 
@@ -82,7 +84,12 @@ export function createServerMenuAuth(data: { menu_id: number; title: string; mar
   return request.post<ServerMenuAuth>({ url: `${serverMenuUrl}/auth`, params: data })
 }
 
-export function updateServerMenuAuth(data: { id: number; menu_id: number; title: string; mark: string }) {
+export function updateServerMenuAuth(data: {
+  id: number
+  menu_id: number
+  title: string
+  mark: string
+}) {
   return request.put<ServerMenuAuth>({ url: `${serverMenuUrl}/auth`, params: data })
 }
 
@@ -141,7 +148,9 @@ export function fetchCustomerDetail(id: number) {
   return request.get<Customer>({ url: `${customerUrl}/detail`, params: { id } })
 }
 
-export function createCustomer(data: Partial<Customer> & { password?: string; trade_password?: string }) {
+export function createCustomer(
+  data: Partial<Customer> & { password?: string; trade_password?: string }
+) {
   return request.post<Customer>({ url: customerUrl, params: data })
 }
 
@@ -153,7 +162,12 @@ export function deleteCustomer(id: number) {
   return request.del<void>({ url: customerUrl, params: { id } })
 }
 
-export function depositCustomer(data: { id: number; currency: string; amount: number; remark?: string }) {
+export function depositCustomer(data: {
+  id: number
+  currency: string
+  amount: number
+  remark?: string
+}) {
   return request.post<void>({ url: `${customerUrl}/deposit`, params: data })
 }
 
@@ -164,24 +178,62 @@ export function updateCustomerStatus(id: number, status: number) {
 export function updateCustomerFundStatus(id: number, status: number) {
   return request.put<void>({ url: `${customerUrl}/fund-status`, params: { id, status } })
 }
-export function updateCustomerPassword(data: { id: number; password: string; type: 'login' | 'trade' }) {
+export function updateCustomerPassword(data: {
+  id: number
+  password: string
+  type: 'login' | 'trade'
+}) {
   return request.put<void>({ url: `${customerUrl}/password`, params: data })
 }
-export function updateCustomerBank(data: { id: number; bank_name: string; bank_card: string; bank_address?: string }) {
+export function updateCustomerBank(data: {
+  id: number
+  bank_name: string
+  bank_card: string
+  bank_address?: string
+}) {
   return request.put<void>({ url: `${customerUrl}/bank`, params: data })
 }
-export function reviewCustomerVerification(data: { id: number; verified: number; remark?: string }) {
+export function reviewCustomerVerification(data: {
+  id: number
+  verified: number
+  remark?: string
+}) {
   return request.put<void>({ url: `${customerUrl}/verification/review`, params: data })
 }
 export function batchReviewCustomerVerification(ids: number[], remark?: string) {
-  return request.put<void>({ url: `${customerUrl}/verification/review/batch`, params: { ids, remark } })
+  return request.put<void>({
+    url: `${customerUrl}/verification/review/batch`,
+    params: { ids, remark }
+  })
 }
 export function batchUpdateCustomerStatus(ids: number[], status: number) {
   return request.put<void>({ url: `${customerUrl}/status/batch`, params: { ids, status } })
 }
 
-export interface CustomerDevice { id: number; customer_id: number; device_type: string; brand: string; device_model: string; device_id: string; api_base_url: string; system: string; app_version: string; blocked: number; last_login: number }
-export interface CustomerFundRecord { id: number; customer_id: number; type: string; direction: string; currency: string; amount: number; balance: number; remark: string; created_at: string }
+export interface CustomerDevice {
+  id: number
+  customer_id: number
+  device_type: string
+  brand: string
+  device_model: string
+  device_id: string
+  api_base_url: string
+  system: string
+  app_version: string
+  blocked: number
+  last_login: number
+}
+export interface CustomerFundRecord {
+  id: number
+  customer_id: number
+  type: string
+  direction: string
+  currency: string
+  amount: number
+  balance: number
+  remark: string
+  created_at: string
+}
 
 export function fetchCustomerDevices(phone?: string) {
   return request.get<CustomerDevice[]>({ url: `${customerUrl}/devices`, params: { phone } })
@@ -189,11 +241,22 @@ export function fetchCustomerDevices(phone?: string) {
 export function updateCustomerDeviceBlocked(id: number, blocked: number) {
   return request.put<void>({ url: `${customerUrl}/devices/block`, params: { id, blocked } })
 }
-export function batchUpdateCustomerDeviceBlocked(data: { phone?: string; device_id?: string; api_base_url?: string; blocked: number }) {
-  return request.put<{ updated: number }>({ url: `${customerUrl}/devices/block/batch`, params: data })
+export function batchUpdateCustomerDeviceBlocked(data: {
+  phone?: string
+  device_id?: string
+  api_base_url?: string
+  blocked: number
+}) {
+  return request.put<{ updated: number }>({
+    url: `${customerUrl}/devices/block/batch`,
+    params: data
+  })
 }
 export function fetchCustomerFundRecords(phone?: string) {
-  return request.get<CustomerFundRecord[]>({ url: `${customerUrl}/fund-records`, params: { phone } })
+  return request.get<CustomerFundRecord[]>({
+    url: `${customerUrl}/fund-records`,
+    params: { phone }
+  })
 }
 
 const administratorUrl = '/server-api/private/admin/system/user'
@@ -209,53 +272,300 @@ export function resetAdministratorGoogleAuthSecret(id: number) {
   })
 }
 
-export interface TradePosition { id: number; customer_id: number; symbol: string; stock_name: string; currency: string; position_qty: number; available_qty: number; current_price: number; cost_price: number; total_cost: number; market_value: number; profit_loss: number; profit_rate: number; status: number; buy_at: number }
+export interface TradePosition {
+  id: number
+  customer_id: number
+  symbol: string
+  stock_name: string
+  currency: string
+  position_qty: number
+  available_qty: number
+  current_price: number
+  cost_price: number
+  total_cost: number
+  market_value: number
+  profit_loss: number
+  profit_rate: number
+  status: number
+  buy_at: number
+}
 const tradeUrl = '/server-api/private/admin/platform/trade/positions'
-export function fetchTradePositions(params: { phone?: string; symbol?: string; stock_name?: string; status?: number }) { return request.get<TradePosition[]>({ url: tradeUrl, params }) }
-export function saveTradePosition(data: Partial<TradePosition> & { customer_id: number; symbol: string }) { return data.id ? request.put<TradePosition>({ url: tradeUrl, params: data }) : request.post<TradePosition>({ url: tradeUrl, params: data }) }
-export function deleteTradePosition(id: number) { return request.del<void>({ url: tradeUrl, params: { id } }) }
+export function fetchTradePositions(params: {
+  phone?: string
+  symbol?: string
+  stock_name?: string
+  status?: number
+}) {
+  return request.get<TradePosition[]>({ url: tradeUrl, params })
+}
+export function saveTradePosition(
+  data: Partial<TradePosition> & { customer_id: number; symbol: string }
+) {
+  return data.id
+    ? request.put<TradePosition>({ url: tradeUrl, params: data })
+    : request.post<TradePosition>({ url: tradeUrl, params: data })
+}
+export function deleteTradePosition(id: number) {
+  return request.del<void>({ url: tradeUrl, params: { id } })
+}
 
-export interface TradeRecord { id: number; customer_id: number; customer_name: string; customer_phone: string; symbol: string; stock_name: string; currency: string; direction: '买入' | '卖出'; trade_price: number; quantity: number; amount: number; stamp_duty: number; transfer_fee: number; commission: number; remark: string; trade_at: number }
-export interface TradeRecordPage { records: TradeRecord[]; total: number; page: number; page_size: number }
+export interface TradeRecord {
+  id: number
+  customer_id: number
+  customer_name: string
+  customer_phone: string
+  symbol: string
+  stock_name: string
+  currency: string
+  direction: '买入' | '卖出'
+  trade_price: number
+  quantity: number
+  amount: number
+  stamp_duty: number
+  transfer_fee: number
+  commission: number
+  remark: string
+  trade_at: number
+}
+export interface TradeRecordPage {
+  records: TradeRecord[]
+  total: number
+  page: number
+  page_size: number
+}
 const tradeRecordUrl = '/server-api/private/admin/platform/trade/records'
-export function fetchTradeRecords(params: { page: number; pageSize: number; phone?: string; symbol?: string; direction?: string }) { return request.get<TradeRecordPage>({ url: tradeRecordUrl, params }) }
-export function saveTradeRecord(data: Partial<TradeRecord> & { customer_id: number; symbol: string; direction: '买入' | '卖出' }) { return data.id ? request.put<TradeRecord>({ url: tradeRecordUrl, params: data }) : request.post<TradeRecord>({ url: tradeRecordUrl, params: data }) }
-export function deleteTradeRecord(id: number) { return request.del<void>({ url: tradeRecordUrl, params: { id } }) }
+export function fetchTradeRecords(params: {
+  page: number
+  pageSize: number
+  phone?: string
+  symbol?: string
+  direction?: string
+}) {
+  return request.get<TradeRecordPage>({ url: tradeRecordUrl, params })
+}
+export function saveTradeRecord(
+  data: Partial<TradeRecord> & { customer_id: number; symbol: string; direction: '买入' | '卖出' }
+) {
+  return data.id
+    ? request.put<TradeRecord>({ url: tradeRecordUrl, params: data })
+    : request.post<TradeRecord>({ url: tradeRecordUrl, params: data })
+}
+export function deleteTradeRecord(id: number) {
+  return request.del<void>({ url: tradeRecordUrl, params: { id } })
+}
 
-export interface AppSystemSetting { trade: Record<string, any>; stockSync: Record<string, any>; risk: Record<string, any>; recharge: Record<string, any>; limits: Record<string, any>; links: Record<string, any> }
+export interface AppSystemSetting {
+  trade: Record<string, any>
+  stockSync: Record<string, any>
+  risk: Record<string, any>
+  recharge: Record<string, any>
+  limits: Record<string, any>
+  links: Record<string, any>
+}
 const systemSettingUrl = '/server-api/private/admin/platform/setting/system'
-export function fetchAppSystemSetting() { return request.get<AppSystemSetting>({ url: systemSettingUrl }) }
-export function saveAppSystemSetting(data: AppSystemSetting) { return request.put<void>({ url: systemSettingUrl, params: data }) }
+export function fetchAppSystemSetting() {
+  return request.get<AppSystemSetting>({ url: systemSettingUrl })
+}
+export function saveAppSystemSetting(data: AppSystemSetting) {
+  return request.put<void>({ url: systemSettingUrl, params: data })
+}
 
-export interface AppNotice { id: number; title: string; content: string; popup: boolean; recipient_ids: string; status: number; created_at: string; updated_at: string }
+export interface AppNotice {
+  id: number
+  title: string
+  content: string
+  popup: boolean
+  recipient_ids: string
+  status: number
+  created_at: string
+  updated_at: string
+}
 const noticeUrl = '/server-api/private/admin/platform/setting/notices'
-export function fetchAppNotices(params: { page: number; pageSize: number; title?: string; popup?: string; status?: string }) { return request.get<{ records: AppNotice[]; total: number }>({ url: noticeUrl, params }) }
-export interface AppNoticePayload { id?: number; title: string; content: string; popup: boolean; recipient_ids: number[]; status: number }
-export function saveAppNotice(data: AppNoticePayload) { return data.id ? request.put<AppNotice>({ url: noticeUrl, params: data }) : request.post<AppNotice>({ url: noticeUrl, params: data }) }
-export function deleteAppNotice(id: number) { return request.del<void>({ url: noticeUrl, params: { id } }) }
-export function updateAppNoticeStatus(id: number, status: number) { return request.put<void>({ url: `${noticeUrl}/status`, params: { id, status } }) }
+export function fetchAppNotices(params: {
+  page: number
+  pageSize: number
+  title?: string
+  popup?: string
+  status?: string
+}) {
+  return request.get<{ records: AppNotice[]; total: number }>({ url: noticeUrl, params })
+}
+export interface AppNoticePayload {
+  id?: number
+  title: string
+  content: string
+  popup: boolean
+  recipient_ids: number[]
+  status: number
+}
+export function saveAppNotice(data: AppNoticePayload) {
+  return data.id
+    ? request.put<AppNotice>({ url: noticeUrl, params: data })
+    : request.post<AppNotice>({ url: noticeUrl, params: data })
+}
+export function deleteAppNotice(id: number) {
+  return request.del<void>({ url: noticeUrl, params: { id } })
+}
+export function updateAppNoticeStatus(id: number, status: number) {
+  return request.put<void>({ url: `${noticeUrl}/status`, params: { id, status } })
+}
 
-export interface AppArticle { id: number; title: string; type: string; content: string; status: number; created_at: string; updated_at: string }
+export interface AppArticle {
+  id: number
+  title: string
+  type: string
+  content: string
+  status: number
+  created_at: string
+  updated_at: string
+}
 const articleUrl = '/server-api/private/admin/platform/setting/articles'
-export function fetchAppArticles(params: { page: number; pageSize: number; title?: string; status?: string }) { return request.get<{ records: AppArticle[]; total: number }>({ url: articleUrl, params }) }
-export function saveAppArticle(data: Partial<AppArticle> & { title: string; type: string; content: string; status: number }) { return data.id ? request.put<AppArticle>({ url: articleUrl, params: data }) : request.post<AppArticle>({ url: articleUrl, params: data }) }
-export function deleteAppArticle(id: number) { return request.del<void>({ url: articleUrl, params: { id } }) }
-export function updateAppArticleStatus(id: number, status: number) { return request.put<void>({ url: `${articleUrl}/status`, params: { id, status } }) }
+export function fetchAppArticles(params: {
+  page: number
+  pageSize: number
+  title?: string
+  type?: string
+  status?: string
+}) {
+  return request.get<{ records: AppArticle[]; total: number }>({ url: articleUrl, params })
+}
+export function saveAppArticle(
+  data: Partial<AppArticle> & { title: string; type: string; content: string; status: number }
+) {
+  return data.id
+    ? request.put<AppArticle>({ url: articleUrl, params: data })
+    : request.post<AppArticle>({ url: articleUrl, params: data })
+}
+export function deleteAppArticle(id: number) {
+  return request.del<void>({ url: articleUrl, params: { id } })
+}
+export function updateAppArticleStatus(id: number, status: number) {
+  return request.put<void>({ url: `${articleUrl}/status`, params: { id, status } })
+}
 
-export interface StockSecurity { id: number; code: string; symbol: string; market: string; name: string; exchange: string; board: string; last_price: number; change_rate: number; status: number; source: string; updated_at: number }
+export interface StockSecurity {
+  id: number
+  code: string
+  symbol: string
+  market: string
+  name: string
+  exchange: string
+  board: string
+  last_price: number
+  change_rate: number
+  status: number
+  source: string
+  updated_at: number
+}
 const stockUrl = '/server-api/private/admin/platform/stock/securities'
-export function fetchStockSecurities(params: { page: number; pageSize: number; symbol?: string; name?: string; market?: string; exchange?: string; board?: string; cursor?: number; sort_by?: 'id' | 'last_price' | 'change_rate'; sort_order?: 'asc' | 'desc' }) { return request.get<{ records: StockSecurity[]; total: number; next_cursor: number }>({ url: stockUrl, params }) }
-export function fetchStockExchanges() { return request.get<string[]>({ url: `${stockUrl}/exchanges` }) }
-export function fetchStockBoards() { return request.get<string[]>({ url: `${stockUrl}/boards` }) }
-export function saveStockSecurity(data: Partial<StockSecurity> & { code: string; name: string }) { return data.id ? request.put<StockSecurity>({ url: stockUrl, params: data }) : request.post<StockSecurity>({ url: stockUrl, params: data }) }
-export function deleteStockSecurity(id: number) { return request.del<void>({ url: stockUrl, params: { id } }) }
-export function updateStockSecurityStatus(id: number, status: number) { return request.put<void>({ url: `${stockUrl}/status`, params: { id, status } }) }
-export function syncEastmoneySecurities() { return request.post<{ synced: number; source: string }>({ url: `${stockUrl}/sync/eastmoney`, params: {} }) }
+export function fetchStockSecurities(params: {
+  page: number
+  pageSize: number
+  symbol?: string
+  name?: string
+  market?: string
+  exchange?: string
+  board?: string
+  cursor?: number
+  sort_by?: 'id' | 'last_price' | 'change_rate'
+  sort_order?: 'asc' | 'desc'
+}) {
+  return request.get<{ records: StockSecurity[]; total: number; next_cursor: number }>({
+    url: stockUrl,
+    params
+  })
+}
+export function fetchStockExchanges() {
+  return request.get<string[]>({ url: `${stockUrl}/exchanges` })
+}
+export function fetchStockBoards() {
+  return request.get<string[]>({ url: `${stockUrl}/boards` })
+}
+export function saveStockSecurity(data: Partial<StockSecurity> & { code: string; name: string }) {
+  return data.id
+    ? request.put<StockSecurity>({ url: stockUrl, params: data })
+    : request.post<StockSecurity>({ url: stockUrl, params: data })
+}
+export function deleteStockSecurity(id: number) {
+  return request.del<void>({ url: stockUrl, params: { id } })
+}
+export function updateStockSecurityStatus(id: number, status: number) {
+  return request.put<void>({ url: `${stockUrl}/status`, params: { id, status } })
+}
+export function syncEastmoneySecurities() {
+  return request.post<{ synced: number; source: string }>({
+    url: `${stockUrl}/sync/eastmoney`,
+    params: {}
+  })
+}
 
-export interface FinanceRecharge { id: number; customer_id: number; customer_name: string; customer_phone: string; amount: number; currency: string; method: string; voucher: string; status: number; remark: string; failure_reason: string; created_at: string; reviewed_at: number }
-export interface FinanceWithdrawal { id: number; customer_id: number; customer_name: string; customer_phone: string; amount: number; currency: string; method: string; bank_name: string; bank_card: string; bank_address: string; status: number; failure_reason: string; created_at: string; reviewed_at: number }
+export interface FinanceRecharge {
+  id: number
+  customer_id: number
+  customer_name: string
+  customer_phone: string
+  amount: number
+  currency: string
+  method: string
+  voucher: string
+  status: number
+  remark: string
+  failure_reason: string
+  created_at: string
+  reviewed_at: number
+}
+export interface FinanceWithdrawal {
+  id: number
+  customer_id: number
+  customer_name: string
+  customer_phone: string
+  amount: number
+  currency: string
+  method: string
+  bank_name: string
+  bank_card: string
+  bank_address: string
+  status: number
+  failure_reason: string
+  created_at: string
+  reviewed_at: number
+}
 const financeUrl = '/server-api/private/admin/platform/finance'
-export function fetchFinanceRecharges(params: { page: number; pageSize: number; phone?: string; name?: string; status?: string }) { return request.get<{ records: FinanceRecharge[]; total: number }>({ url: `${financeUrl}/recharges`, params }) }
-export function saveFinanceRecharge(data: Partial<FinanceRecharge> & { customer_id: number; amount: number }) { return data.id ? request.put<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data }) : request.post<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data }) }
-export function fetchFinanceWithdrawals(params: { page: number; pageSize: number; phone?: string; name?: string; status?: string }) { return request.get<{ records: FinanceWithdrawal[]; total: number }>({ url: `${financeUrl}/withdrawals`, params }) }
-export function saveFinanceWithdrawal(data: Partial<FinanceWithdrawal> & { customer_id: number; amount: number }) { return data.id ? request.put<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data }) : request.post<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data }) }
+export function fetchFinanceRecharges(params: {
+  page: number
+  pageSize: number
+  phone?: string
+  name?: string
+  status?: string
+}) {
+  return request.get<{ records: FinanceRecharge[]; total: number }>({
+    url: `${financeUrl}/recharges`,
+    params
+  })
+}
+export function saveFinanceRecharge(
+  data: Partial<FinanceRecharge> & { customer_id: number; amount: number }
+) {
+  return data.id
+    ? request.put<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data })
+    : request.post<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data })
+}
+export function fetchFinanceWithdrawals(params: {
+  page: number
+  pageSize: number
+  phone?: string
+  name?: string
+  status?: string
+}) {
+  return request.get<{ records: FinanceWithdrawal[]; total: number }>({
+    url: `${financeUrl}/withdrawals`,
+    params
+  })
+}
+export function saveFinanceWithdrawal(
+  data: Partial<FinanceWithdrawal> & { customer_id: number; amount: number }
+) {
+  return data.id
+    ? request.put<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data })
+    : request.post<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data })
+}
