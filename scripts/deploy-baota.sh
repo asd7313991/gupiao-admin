@@ -111,6 +111,23 @@ update_repo "$SERVER_DIR" "Go 后端"
 restore_production_configs
 log "已恢复服务器生产配置"
 
+if [[ ! -f "$SERVER_DIR/Dockerfile" ]]; then
+  log "后端仓库缺少 Dockerfile，自动生成"
+  cat >"$SERVER_DIR/Dockerfile" <<'DOCKERFILE'
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+EXPOSE 8080
+CMD ["go", "run", "main.go", "--dev"]
+DOCKERFILE
+fi
+
 if [[ ! -d "$MOBILE_REPO_DIR/.git" ]]; then
   if [[ -e "$MOBILE_REPO_DIR" ]]; then
     log "移动端源码目录不是 Git 仓库，删除后重新克隆：$MOBILE_REPO_DIR"
