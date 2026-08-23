@@ -128,6 +128,17 @@ CMD ["go", "run", "main.go", "--dev"]
 DOCKERFILE
 fi
 
+required_backend_files=(
+  "$SERVER_DIR/api/app/v1/open/mobile/router.go"
+  "$SERVER_DIR/api/app/v1/open/mobile/auth.go"
+  "$SERVER_DIR/api/app/v1/open/mobile/market.go"
+  "$SERVER_DIR/api/auth/customer.go"
+  "$SERVER_DIR/api/middleware/customer_jwt.go"
+)
+for required_file in "${required_backend_files[@]}"; do
+  [[ -f "$required_file" ]] || fail "后端远端仓库缺少移动 API 文件，请先提交并推送：$required_file"
+done
+
 if [[ ! -d "$MOBILE_REPO_DIR/.git" ]]; then
   if [[ -e "$MOBILE_REPO_DIR" ]]; then
     log "移动端源码目录不是 Git 仓库，删除后重新克隆：$MOBILE_REPO_DIR"
@@ -168,6 +179,16 @@ done
   fail "后端在 120 秒内未通过健康检查"
 }
 
+log "检查核心移动 API"
+curl --silent --fail --max-time 10 "http://127.0.0.1:8081/api/v1/open/mobile/securities?page=1&pageSize=1" >/dev/null || {
+  docker compose logs --tail=100 server >&2
+  fail "证券移动 API 不可用，请确认后端移动 API 已提交并推送"
+}
+curl --silent --fail --max-time 10 "http://127.0.0.1:8081/api/v1/open/mobile/indices" >/dev/null || {
+  docker compose logs --tail=100 server >&2
+  fail "指数移动 API 不可用，请确认后端移动 API 已提交并推送"
+}
+
 log "发布移动端静态文件到 $MOBILE_WEB_ROOT"
 install -d -m 755 "$MOBILE_WEB_ROOT"
 rsync -rt --delete --chmod=D755,F644 \
@@ -180,7 +201,6 @@ rsync -rt --delete --chmod=D755,F644 \
 
 log "检查服务状态"
 docker compose ps
-curl --silent --fail "http://127.0.0.1:8081/api/v1/open/mobile/indices" >/dev/null
 
 log "部署完成"
 log "后台管理：由 production 容器提供（宿主机 8080）"
