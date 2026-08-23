@@ -63,6 +63,41 @@ update_repo() {
   log "$name 当前版本：$(git -C "$directory" rev-parse --short HEAD)"
 }
 
+build_mobile_on_host() {
+  if [[ -f "$MOBILE_REPO_DIR/pnpm-lock.yaml" ]]; then
+    command -v corepack >/dev/null || fail "移动端使用 pnpm，但服务器未安装 corepack"
+    corepack pnpm --dir "$MOBILE_REPO_DIR" install --frozen-lockfile
+    corepack pnpm --dir "$MOBILE_REPO_DIR" run lint
+    corepack pnpm --dir "$MOBILE_REPO_DIR" run build
+  elif [[ -f "$MOBILE_REPO_DIR/package-lock.json" ]]; then
+    npm --prefix "$MOBILE_REPO_DIR" ci
+    npm --prefix "$MOBILE_REPO_DIR" run lint
+    npm --prefix "$MOBILE_REPO_DIR" run build
+  else
+    log "移动端没有锁文件，使用 npm install"
+    npm --prefix "$MOBILE_REPO_DIR" install
+    npm --prefix "$MOBILE_REPO_DIR" run lint
+    npm --prefix "$MOBILE_REPO_DIR" run build
+  fi
+}
+
+build_mobile_in_docker() {
+  local build_command
+  if [[ -f "$MOBILE_REPO_DIR/pnpm-lock.yaml" ]]; then
+    build_command='corepack enable && corepack prepare pnpm@10.17.1 --activate && pnpm install --frozen-lockfile && pnpm run lint && pnpm run build'
+  elif [[ -f "$MOBILE_REPO_DIR/package-lock.json" ]]; then
+    build_command='npm ci && npm run lint && npm run build'
+  else
+    log "移动端没有锁文件，使用 npm install"
+    build_command='npm install && npm run lint && npm run build'
+  fi
+  docker run --rm \
+    --volume "$MOBILE_REPO_DIR:/app" \
+    --workdir /app \
+    node:22-alpine \
+    sh -c "$build_command"
+}
+
 [[ -d "$ADMIN_DIR" ]] || fail "后台目录不存在：$ADMIN_DIR"
 [[ -d "$SERVER_DIR" ]] || fail "后端目录不存在：$SERVER_DIR"
 
@@ -88,18 +123,12 @@ else
 fi
 
 log "安装移动端依赖并执行生产构建"
-if command -v node >/dev/null && command -v corepack >/dev/null; then
+if command -v node >/dev/null && command -v npm >/dev/null; then
   log "使用服务器 Node.js 构建移动端"
-  corepack pnpm --dir "$MOBILE_REPO_DIR" install --frozen-lockfile
-  corepack pnpm --dir "$MOBILE_REPO_DIR" run lint
-  corepack pnpm --dir "$MOBILE_REPO_DIR" run build
+  build_mobile_on_host
 else
   log "服务器未安装 Node.js，使用 node:22-alpine 容器构建移动端"
-  docker run --rm \
-    --volume "$MOBILE_REPO_DIR:/app" \
-    --workdir /app \
-    node:22-alpine \
-    sh -c 'corepack enable && corepack prepare pnpm@10.17.1 --activate && pnpm install --frozen-lockfile && pnpm run lint && pnpm run build'
+  build_mobile_in_docker
 fi
 [[ -f "$MOBILE_REPO_DIR/dist/index.html" ]] || fail "移动端构建产物缺少 index.html"
 
