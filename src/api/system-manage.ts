@@ -569,3 +569,156 @@ export function saveFinanceWithdrawal(
     ? request.put<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data })
     : request.post<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data })
 }
+
+export interface FinanceNewsItem {
+  id: number
+  title: string
+  summary: string
+  source_name: string
+  source_url: string
+  category: string
+  content_type: string
+  status: string
+  is_top: boolean
+  published_at: number
+  collected_at: number
+  security_codes: string[]
+  source_unique_id: string
+  copyright_mode: string
+  created_at: string
+  updated_at: string
+}
+
+export interface NewsSource {
+  id: number
+  name: string
+  source_type: string
+  base_url: string
+  category_mapping: string
+  enabled: boolean
+  interval_seconds: number
+  timeout_seconds: number
+  rate_limit: number
+  last_collected_at: number
+  last_success_at: number
+  consecutive_failures: number
+  config_json: string
+  created_at: string
+  updated_at: string
+}
+
+export interface NewsCollectLog {
+  id: number
+  task_id: string
+  source_id: number
+  started_at: number
+  finished_at: number
+  status: string
+  fetched_count: number
+  inserted_count: number
+  updated_count: number
+  duplicate_count: number
+  failed_count: number
+  error_summary: string
+  trace_id: string
+  created_at: string
+  updated_at: string
+}
+
+const newsUrl = '/server-api/private/admin/platform/news'
+
+export function fetchFinanceNews(params: {
+  page: number
+  pageSize: number
+  category?: string
+  contentType?: string
+  source?: string
+  status?: string
+  keyword?: string
+  securityCode?: string
+  startTime?: string
+  endTime?: string
+}) {
+  return request.get<{
+    records: FinanceNewsItem[]
+    total: number
+    page: number
+    page_size: number
+  }>({
+    url: newsUrl,
+    params
+  })
+}
+
+export function fetchFinanceNewsDetail(id: number) {
+  return request.get<any>({ url: `${newsUrl}/${id}` })
+}
+
+export function updateFinanceNews(data: {
+  id: number
+  category?: string
+  summary?: string
+  status?: string
+  is_top?: boolean
+}) {
+  return request.put<void>({ url: newsUrl, params: data })
+}
+
+export function deleteFinanceNews(id: number) {
+  return request.del<void>({ url: newsUrl, params: { id } })
+}
+
+export function batchFinanceNewsAction(data: { action: 'hide' | 'delete'; ids: number[] }) {
+  return request.post<void>({ url: `${newsUrl}/batch-action`, params: data })
+}
+
+export function fetchNewsSources() {
+  return request.get<NewsSource[]>({ url: `${newsUrl}/sources` })
+}
+
+export function createNewsSource(data: {
+  name: string
+  source_type: string
+  base_url: string
+  category_mapping?: string
+  enabled?: boolean
+  interval_seconds?: number
+  timeout_seconds?: number
+  rate_limit?: number
+  config_json?: string
+}) {
+  return request.post<{ id: number }>({ url: `${newsUrl}/sources`, params: data })
+}
+
+export function updateNewsSource(data: {
+  id: number
+  enabled?: boolean
+  interval_seconds?: number
+  timeout_seconds?: number
+  rate_limit?: number
+  config_json?: string
+}) {
+  return request.put<void>({ url: `${newsUrl}/sources`, params: data })
+}
+
+export function deleteNewsSource(id: number) {
+  return request.del<void>({ url: `${newsUrl}/sources`, params: { id } })
+}
+
+export function collectFinanceNews(sourceId?: number) {
+  return request.post<any>({
+    url: `${newsUrl}/collect`,
+    params: sourceId ? { source_id: sourceId } : {}
+  })
+}
+
+export function fetchNewsCollectLogs(params: {
+  page: number
+  pageSize: number
+  source_id?: number
+}) {
+  return request.get<{ records: NewsCollectLog[]; total: number }>({
+    url: `${newsUrl}/collect-logs`,
+    params
+  })
+}
