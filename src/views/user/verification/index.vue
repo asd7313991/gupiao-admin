@@ -37,9 +37,9 @@
             ><ElImage
               v-if="row.id_card_front"
               :src="row.id_card_front"
-              :preview-src-list="[row.id_card_front]"
               fit="cover"
               class="credential"
+              @click="view(row)"
             /><span v-else>未上传</span></template
           ></ElTableColumn
         >
@@ -48,9 +48,9 @@
             ><ElImage
               v-if="row.id_card_back"
               :src="row.id_card_back"
-              :preview-src-list="[row.id_card_back]"
               fit="cover"
               class="credential"
+              @click="view(row)"
             /><span v-else>未上传</span></template
           ></ElTableColumn
         >
@@ -117,21 +117,19 @@
           ><ElImage
             v-if="detail.id_card_front"
             :src="detail.id_card_front"
-            :preview-src-list="[detail.id_card_front]"
             class="large-image"
           /><span v-else>未上传</span></ElDescriptionsItem
         ><ElDescriptionsItem label="身份证背面"
           ><ElImage
             v-if="detail.id_card_back"
             :src="detail.id_card_back"
-            :preview-src-list="[detail.id_card_back]"
             class="large-image"
           /><span v-else>未上传</span></ElDescriptionsItem
         ><ElDescriptionsItem label="认证视频" :span="2">{{
           detail.verification_video || '未上传'
         }}</ElDescriptionsItem></ElDescriptions
       ><template #footer
-        ><ElButton @click="detailVisible = false">关闭</ElButton></template
+        ><ElButton type="primary" @click="detailVisible = false">返回列表</ElButton></template
       ></ElDialog
     >
     <ElDialog
@@ -275,14 +273,21 @@
   }
 
   .credential {
-    width: 72px;
-    height: 48px;
+    width: 104px;
+    height: 70px;
+    cursor: pointer;
+    object-fit: cover;
+    opacity: 1;
   }
 
   .large-image {
-    width: 180px;
-    height: 120px;
+    display: block;
+    width: 280px;
+    max-width: 100%;
+    height: 186px;
     object-fit: cover;
+    background: #fff;
+    opacity: 1;
   }
 
   .more {
