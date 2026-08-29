@@ -29,7 +29,23 @@
             (row.security_codes || []).join(', ') || '--'
           }}</template>
         </ElTableColumn>
-        <ElTableColumn prop="status" label="状态" width="110" />
+        <ElTableColumn label="状态" width="110">
+          <template #default="{ row }">
+            <ElTag
+              :type="
+                row.status === 'published'
+                  ? 'success'
+                  : row.status === 'hidden'
+                    ? 'info'
+                    : 'warning'
+              "
+            >
+              {{
+                row.status === 'published' ? '已上架' : row.status === 'hidden' ? '已下架' : '草稿'
+              }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
         <ElTableColumn label="置顶" width="90">
           <template #default="{ row }">
             <ElSwitch :model-value="row.is_top" @change="toggleTop(row)" />
@@ -48,6 +64,9 @@
               <template #dropdown>
                 <ElDropdownMenu>
                   <ElDropdownItem @click="openEdit(row)">编辑</ElDropdownItem>
+                  <ElDropdownItem @click="toggleStatus(row)">
+                    {{ row.status === 'hidden' ? '上架' : '下架' }}
+                  </ElDropdownItem>
                   <ElDropdownItem @click="openSource(row.source_url)">原文</ElDropdownItem>
                   <ElDropdownItem divided class="danger" @click="remove(row)">删除</ElDropdownItem>
                 </ElDropdownMenu>
@@ -132,6 +151,17 @@
           show-overflow-tooltip
         />
       </ElTable>
+      <div class="pager">
+        <span>共 {{ logTotal }} 条</span>
+        <ElPagination
+          v-model:current-page="logPage"
+          v-model:page-size="logPageSize"
+          :total="logTotal"
+          layout="prev, pager, next, sizes"
+          @current-change="loadLogs"
+          @size-change="loadLogs"
+        />
+      </div>
     </ElCard>
 
     <ElDialog v-model="sourceCreateVisible" title="新增新闻源" width="680px">
@@ -215,6 +245,9 @@
         <ElFormItem label="新闻ID">
           <ElInput :model-value="current?.id" disabled />
         </ElFormItem>
+        <ElFormItem label="标题">
+          <ElInput v-model="edit.title" maxlength="300" show-word-limit />
+        </ElFormItem>
         <ElFormItem label="分类">
           <ElSelect v-model="edit.category" style="width: 100%">
             <ElOption
@@ -290,7 +323,18 @@
   const selected = ref<FinanceNewsItem[]>([])
   const sources = ref<NewsSource[]>([])
   const logs = ref<NewsCollectLog[]>([])
-  const filters = reactive({ keyword: '', category: '', source: '', status: '' })
+  const logPage = ref(1)
+  const logPageSize = ref(10)
+  const logTotal = ref(0)
+  const filters = reactive({
+    keyword: '',
+    category: '',
+    contentType: '',
+    source: '',
+    securityCode: '',
+    status: '',
+    publishedAt: [] as string[]
+  })
   const sourceEditorVisible = ref(false)
   const sourceCreateVisible = ref(false)
   const sourceSaving = ref(false)
@@ -324,7 +368,26 @@
         options: categories.map((item) => ({ label: item.label, value: item.value }))
       }
     },
+    {
+      label: '类型',
+      key: 'contentType',
+      type: 'select',
+      props: {
+        placeholder: '全部类型',
+        options: [
+          { label: '文章', value: 'article' },
+          { label: '快讯', value: 'flash' },
+          { label: '公告', value: 'announcement' }
+        ]
+      }
+    },
     { label: '来源', key: 'source', type: 'input', props: { placeholder: '来源名称' } },
+    {
+      label: '证券代码',
+      key: 'securityCode',
+      type: 'input',
+      props: { placeholder: '例如：600519' }
+    },
     {
       label: '状态',
       key: 'status',
@@ -337,16 +400,31 @@
           { label: '隐藏', value: 'hidden' }
         ]
       }
+    },
+    {
+      label: '发布时间',
+      key: 'publishedAt',
+      type: 'datetimerange',
+      props: {
+        type: 'datetimerange',
+        valueFormat: 'X',
+        startPlaceholder: '开始时间',
+        endPlaceholder: '结束时间'
+      }
     }
   ]
 
   const loadNews = async () => {
     loading.value = true
     try {
+      const { publishedAt, ...queryFilters } = filters
+      const [startTime, endTime] = publishedAt
       const data = await fetchFinanceNews({
         page: page.value,
         pageSize: pageSize.value,
-        ...filters
+        ...queryFilters,
+        startTime,
+        endTime
       })
       rows.value = data.records
       total.value = data.total
@@ -360,8 +438,9 @@
   }
 
   const loadLogs = async () => {
-    const data = await fetchNewsCollectLogs({ page: 1, pageSize: 10 })
+    const data = await fetchNewsCollectLogs({ page: logPage.value, pageSize: logPageSize.value })
     logs.value = data.records
+    logTotal.value = data.total
   }
 
   const loadAll = async () => {
@@ -374,7 +453,15 @@
   }
 
   const reset = () => {
-    Object.assign(filters, { keyword: '', category: '', source: '', status: '' })
+    Object.assign(filters, {
+      keyword: '',
+      category: '',
+      contentType: '',
+      source: '',
+      securityCode: '',
+      status: '',
+      publishedAt: []
+    })
     page.value = 1
     loadNews()
   }
@@ -514,11 +601,12 @@
 
   const editorVisible = ref(false)
   const current = ref<FinanceNewsItem | null>(null)
-  const edit = reactive({ category: 'OTHER', summary: '', status: 'published' })
+  const edit = reactive({ title: '', category: 'OTHER', summary: '', status: 'published' })
 
   const openEdit = (row: FinanceNewsItem) => {
     current.value = row
     Object.assign(edit, {
+      title: row.title || '',
       category: row.category || 'OTHER',
       summary: row.summary || '',
       status: row.status || 'published'
@@ -528,14 +616,30 @@
 
   const saveEdit = async () => {
     if (!current.value) return
+    if (!edit.title.trim()) {
+      ElMessage.warning('请填写新闻标题')
+      return
+    }
     await updateFinanceNews({
       id: current.value.id,
+      title: edit.title,
       category: edit.category,
       summary: edit.summary,
       status: edit.status
     })
     ElMessage.success('新闻已更新')
     editorVisible.value = false
+    await loadNews()
+  }
+
+  const toggleStatus = async (row: FinanceNewsItem) => {
+    const status = row.status === 'hidden' ? 'published' : 'hidden'
+    const action = status === 'published' ? '上架' : '下架'
+    await ElMessageBox.confirm(`确定${action}新闻「${row.title}」吗？`, `${action}新闻`, {
+      type: 'warning'
+    })
+    await updateFinanceNews({ id: row.id, status })
+    ElMessage.success(`新闻已${action}`)
     await loadNews()
   }
 
@@ -552,10 +656,19 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    height: auto;
+    min-height: var(--art-full-height);
+    padding-bottom: 28px;
+    overflow: visible;
   }
 
   .art-table-card {
-    flex: 1;
+    flex: none;
+
+    :deep(.el-card__body) {
+      height: auto;
+      overflow: visible;
+    }
   }
 
   .source-card,

@@ -27,7 +27,7 @@ export const settingsRoutes: AppRouteRecord = {
       path: 'news',
       name: 'SettingsNews',
       component: '/settings/news',
-      meta: { title: '财经新闻', keepAlive: true }
+      meta: { title: '新闻列表', keepAlive: true }
     }
   ]
 }

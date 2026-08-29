@@ -656,6 +656,7 @@ export function fetchFinanceNewsDetail(id: number) {
 
 export function updateFinanceNews(data: {
   id: number
+  title?: string
   category?: string
   summary?: string
   status?: string
