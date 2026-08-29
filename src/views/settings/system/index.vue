@@ -13,6 +13,51 @@
         ></div
       ></ElCard
     >
+    <ElCard shadow="never" class="panel branding-panel"
+      ><template #header
+        ><SectionTitle
+          mark="◆"
+          color="blue"
+          title="移动端品牌"
+          desc="设置登录与注册页面显示的产品名称和 Logo" /></template
+      ><div class="branding-form"
+        ><div class="branding-preview"
+          ><div class="branding-logo"
+            ><img v-if="logoPreview" :src="logoPreview" alt="当前产品 Logo" />
+            <span v-else>LOGO</span></div
+          ><strong>{{ setting.branding.productName || '证券行情' }}</strong></div
+        ><div class="branding-fields"
+          ><label
+            ><span>产品名称</span
+            ><ElInput
+              v-model="setting.branding.productName"
+              :disabled="!editing"
+              maxlength="30"
+              show-word-limit
+              placeholder="证券行情" /></label
+          ><label
+            ><span>登录页 Logo</span
+            ><div class="branding-upload-actions"
+              ><ElUpload
+                v-if="editing"
+                accept="image/jpeg,image/png,image/webp"
+                :show-file-list="false"
+                :http-request="uploadLogo"
+                ><ElButton :loading="uploading">{{
+                  setting.branding.logo ? '替换 Logo' : '上传 Logo'
+                }}</ElButton></ElUpload
+              ><ElButton
+                v-if="editing && setting.branding.logo"
+                type="danger"
+                plain
+                @click="removeLogo"
+                >移除</ElButton
+              ><small>JPEG、PNG 或 WebP，不超过 2MB，建议使用正方形图片</small></div
+            ></label
+          ></div
+        ></div
+      ></ElCard
+    >
     <ElCard shadow="never" class="panel trade"
       ><template #header
         ><SectionTitle
@@ -95,10 +140,11 @@
 </template>
 <script setup lang="ts">
   import { defineComponent } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, type UploadRequestOptions } from 'element-plus'
   import {
     fetchAppSystemSetting,
     saveAppSystemSetting,
+    uploadAppBrandLogo,
     type AppSystemSetting
   } from '@/api/system-manage'
   import SettingsBlock from './SettingsBlock.vue'
@@ -114,10 +160,14 @@
     offHoursIntervalSecs: 600,
     maxSyncRows: 10000
   }
+  const defaultBranding = { productName: '证券行情', logo: '' }
   const loading = ref(false),
     editing = ref(false),
+    uploading = ref(false),
+    localLogoPreview = ref(''),
     snapshot = ref(''),
     setting = reactive<AppSystemSetting>({
+      branding: { ...defaultBranding },
       trade: {},
       stockSync: { ...defaultStockSync },
       risk: {},
@@ -125,6 +175,12 @@
       limits: {},
       links: {}
     })
+  const logoPreview = computed(() => {
+    if (localLogoPreview.value) return localLogoPreview.value
+    return setting.branding.logo
+      ? `/api/v1/open/mobile/branding/logo?v=${encodeURIComponent(setting.branding.logo)}`
+      : ''
+  })
   const fields = (data: [string, string, any][]) =>
     data.map(([key, label, type]) => ({ key, label, type }))
   const tradeFields = fields([
@@ -184,7 +240,10 @@
     loading.value = true
     try {
       const data = await fetchAppSystemSetting()
-      Object.assign(setting, data, { stockSync: { ...defaultStockSync, ...data.stockSync } })
+      Object.assign(setting, data, {
+        branding: { ...defaultBranding, ...data.branding },
+        stockSync: { ...defaultStockSync, ...data.stockSync }
+      })
       snapshot.value = JSON.stringify(setting)
     } finally {
       loading.value = false
@@ -193,13 +252,37 @@
   const save = async () => {
     await saveAppSystemSetting(setting)
     snapshot.value = JSON.stringify(setting)
+    clearLocalLogoPreview()
     editing.value = false
     ElMessage.success('系统设置已保存')
   }
   const cancel = () => {
     Object.assign(setting, JSON.parse(snapshot.value))
+    clearLocalLogoPreview()
     editing.value = false
   }
+  const clearLocalLogoPreview = () => {
+    if (localLogoPreview.value) URL.revokeObjectURL(localLogoPreview.value)
+    localLogoPreview.value = ''
+  }
+  const uploadLogo = async (options: UploadRequestOptions) => {
+    uploading.value = true
+    try {
+      const result = await uploadAppBrandLogo(options.file)
+      clearLocalLogoPreview()
+      localLogoPreview.value = URL.createObjectURL(options.file)
+      setting.branding.logo = result.logo
+      ElMessage.success('Logo 上传成功，请保存设置使其生效')
+      return result
+    } finally {
+      uploading.value = false
+    }
+  }
+  const removeLogo = () => {
+    clearLocalLogoPreview()
+    setting.branding.logo = ''
+  }
+  onBeforeUnmount(clearLocalLogoPreview)
   onMounted(load)
 </script>
 <style scoped>
@@ -256,6 +339,73 @@
 
   .trade {
     margin-bottom: 14px;
+  }
+
+  .branding-panel {
+    margin-bottom: 14px;
+  }
+
+  .branding-form {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 30px;
+    align-items: center;
+    padding: 18px;
+  }
+
+  .branding-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    padding: 18px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 6px;
+  }
+
+  .branding-logo {
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 18px;
+  }
+
+  .branding-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .branding-fields {
+    display: grid;
+    gap: 18px;
+  }
+
+  .branding-fields label {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .branding-upload-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .branding-upload-actions small {
+    width: 100%;
+    font-size: 11px;
+    color: var(--el-text-color-secondary);
   }
 
   .trade-test-alert {
@@ -335,6 +485,10 @@
     }
 
     .grid {
+      grid-template-columns: 1fr;
+    }
+
+    .branding-form {
       grid-template-columns: 1fr;
     }
   }

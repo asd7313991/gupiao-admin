@@ -355,6 +355,10 @@ export function deleteTradeRecord(id: number) {
 }
 
 export interface AppSystemSetting {
+  branding: {
+    productName: string
+    logo: string
+  }
   trade: Record<string, any>
   stockSync: Record<string, any>
   risk: Record<string, any>
@@ -368,6 +372,14 @@ export function fetchAppSystemSetting() {
 }
 export function saveAppSystemSetting(data: AppSystemSetting) {
   return request.put<void>({ url: systemSettingUrl, params: data })
+}
+export function uploadAppBrandLogo(file: File) {
+  const data = new FormData()
+  data.append('file', file)
+  return request.post<{ logo: string; logo_url: string }>({
+    url: `${systemSettingUrl}/logo`,
+    data
+  })
 }
 
 export interface AppNotice {
