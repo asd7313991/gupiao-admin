@@ -1,0 +1,2 @@
+import { AppRouteRecord } from '@/types/router'
+export const tradeRoutes: AppRouteRecord = { path: '/trade', name: 'Trade', component: '/index/index', meta: { title: '交易管理', icon: 'ri-line-chart-line', roles: ['R_SUPER', 'R_ADMIN'] }, children: [{ path: 'position', name: 'TradePosition', component: '/trade/position', meta: { title: '持仓列表', keepAlive: true } }, { path: 'record', name: 'TradeRecord', component: '/trade/record', meta: { title: '交易记录', keepAlive: true } }] }

@@ -1,1 +1,1 @@
-./admin/node_modules/.bin/commitlint --config admin/commitlint.config.cjs --edit "$1"
+corepack pnpm exec commitlint --edit "$1"
