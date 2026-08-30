@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only mobile (390x844) testing of MobileHome hero carousel, series cards face-crop bug fix, and mobile shell (header/tabbar). All requested acceptance criteria passed: 3-frame carousel with dots + auto-advance + dot click works; hero-slide-0 uses object-top so model's face is fully visible; all 4 series cards (加拿大/台湾/新加坡/澳门) rendered with h-28 + object-top so faces are not cropped; mobile header and 5-tab bar visible on home, all 5 tab navigations work; /games arena correctly excludes mobile shell.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MobileHome hero-slide-0", "issues": ["Left-side dark gradient (from-black/55) sits directly over the model's face, dimming her face somewhat. Face is fully visible (not cropped) so bug is fixed, but visual polish could be improved by shifting gradient to right-side or reducing opacity."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "HeroCarousel auto-advance interval keeps ticking even when user manually taps a dot; consider resetting the interval on manual interaction so the frame does not jump 4s after the user's tap.",
+    "Touch swipe handler reads e.touches[0] without guarding against multi-touch; low risk on mobile but worth a defensive check.",
+    "Both hero frame 2 (activity) and frame 3 (winners) link to /activities and /rankings respectively — fine, but the badge sub-text for winners ('恭喜众多玩家喜提大奖') duplicates the marquee content below; consider differentiating."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Mobile viewport 390x844. All hero-carousel behaviors verified: hero-dot-0/1/2 exist, dot click switches active dot (w-5 width), auto-advance every 4s advances idx (verified 0→1 after ~4.5s), hero-slide-0 img has object-top for face preservation. Series cards series-加拿大系列/台湾系列/新加坡系列/澳门系列 all present with h-28 + object-cover object-top images (faces uncropped, confirmed via screenshot). Mobile shell (mobile-header + mobile-tabbar + mobile-balance) visible on /, /activities, /shop, /user; hidden on /games (arena). All 5 tab-* nav links work.",
+  "rca of the issue": "Face-crop bug root cause: previous version used shorter card height and default object-position (center) which pushed model heads out of frame. Fix applied by E1 (h-28 + object-top on both hero image and series card images) is verified working."
+}

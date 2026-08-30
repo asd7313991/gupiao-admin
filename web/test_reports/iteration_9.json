@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend-only regression on /games mobile toolbar collapsible feature. Mobile (390x844): compact single-row shows mtop-home + mtop-records + mobile-tools-toggle only; desktop tool-* buttons hidden (md:hidden branch active). Clicking mobile-tools-toggle expands mobile-tools-panel showing 6 tools (m-tool-help/records/mode/auto/trend/profit) in 3-col grid + skin-* + toggle-sound below. Clicking any m-tool-* opens the corresponding dialog (verified m-tool-trend, m-tool-mode) and auto-collapses the panel. mtop-records opens records-dialog directly. No horizontal overflow. Desktop (1920): full toolbar with all 7 tool-* + skins + toggle-sound visible; mobile-tools-toggle hidden. 26/28 automated assertions passed; the 2 failures are false negatives from query_selector matching the duplicate hidden desktop DOM node with the same testid (skin-modern/toggle-sound also exist in the always-rendered but hidden md:flex desktop toolbar). Screenshots confirm both skin and sound controls render correctly inside mobile-tools-panel.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Minor duplicate-testid concern: skin-* and toggle-sound have the same data-testid in both the desktop (hidden md:flex) and mobile (md:hidden) branches. It doesn't affect users, but automated tests using data-testid selectors will pick the first (hidden desktop) node. Suggest either (a) render only one branch based on a matchMedia hook, or (b) prefix mobile duplicates (e.g., m-skin-*, m-toggle-sound) similar to the m-tool-* pattern already used for tools."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (functional); 26/28 raw assertions with 2 false-negatives due to duplicate testids"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile toolbar collapsible works. If asserting skin-*/toggle-sound presence on mobile via testid, scope the query inside [data-testid=mobile-tools-panel] because these testids also exist in the always-rendered but hidden desktop branch."
+}

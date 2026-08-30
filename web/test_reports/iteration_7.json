@@ -1,0 +1,36 @@
+{
+  "summary": "Verified new 自动投注 (AutoBetPanel) and 盈利统计 (ProfitStats) toolbar features on /games. Added 4 pytest cases for /api/profit (26/26 pass). Frontend Playwright suite covered open/close, config disabling during run, progress+log+profit updates, auto-stop on completion (periods=3), manual stop, ESC-close-during-run (timer cleared), profit dialog range 7/30 toggle with recharts redraw. Regressions on tool-help, tool-records, tool-mode, tool-trend all still open dialogs.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tests_performed": [
+    "Backend pytest 26/26 pass (added: /api/profit days=7 & days=30 structure, invariant totalWin-totalBet==profit, per-day win-bet==profit, deterministic (same seed), 7 vs 30 length differs).",
+    "auto-bet-dialog opens from tool-auto; contains auto-mode, auto-amount, auto-prog, auto-periods, auto-stopwin, auto-stoploss, auto-start.",
+    "periods=3 run: 3 log rows appear in auto-log, auto-profit updates (-102), controls disabled during run, auto-stop button shown; on completion auto-start reappears (auto-stop triggered by periods limit).",
+    "Manual auto-stop click during run reverts to auto-start.",
+    "Closing dialog via ESC while running clears timer (no residual dialog / lingering interval).",
+    "profit-stats-dialog opens from tool-profit; 4 summary cards + 5 profit-game-* bars + 7 recharts bars for 7d.",
+    "profit-range-30 click -> 30 recharts bars (chart redraws with new /api/profit?days=30 data).",
+    "profit-range-7 switches back cleanly; dialog closes via ESC.",
+    "Regression: tool-help->help-dialog, tool-records->records-dialog, tool-mode & tool-trend open dialogs."
+  ],
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AutoBetPanel: onOpenChange handler correctly calls stop() when closing → clears interval; useEffect cleanup also guards. No timer leak observed after ESC-close during run.",
+    "AutoBetPanel: state.current pattern used to avoid stale closure inside setInterval — correct and idiomatic.",
+    "AutoBetPanel: progression on loss recomputes stake from Number(amount) fallback — safe against empty input.",
+    "ProfitStats: useQuery(enabled: open) prevents fetching when closed; queryKey includes days so switching 7/30 refetches. Chart data derived via useMemo.",
+    "ProfitStats: initial recharts render logs benign 'width(-1)/height(-1)' warning before dialog animation completes — cosmetic only, does not affect chart correctness (7/30 bars render right after settle). Could be silenced by rendering chart after dialog transition (nice-to-have).",
+    "server.py /api/profit is deterministic (seeded by days) — confirmed by test_profit_deterministic. Invariant totalWin-totalBet==profit holds and each daily row satisfies win-bet==profit."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py", "/app/test_reports/iteration_7.json"],
+  "success_rate": {"backend": "100% (26/26)", "frontend": "100% of requested flows"},
+  "seed_data_creation": "None (auto-seeded).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "AutoBetPanel + ProfitStats V3 verified. Only benign recharts 'width(-1)' pre-render warning observed. All data-testids present and stable."
+}
