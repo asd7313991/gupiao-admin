@@ -1,0 +1,21 @@
+import { AppRouteRecord } from '@/types/router'
+export const financeRoutes: AppRouteRecord = {
+  path: '/finance',
+  name: 'Finance',
+  component: '/index/index',
+  meta: { title: '财务管理', icon: 'ri-money-cny-circle-line', roles: ['R_SUPER', 'R_ADMIN'] },
+  children: [
+    {
+      path: 'recharge',
+      name: 'FinanceRecharge',
+      component: '/finance/recharge',
+      meta: { title: '充值列表', keepAlive: true }
+    },
+    {
+      path: 'withdrawal',
+      name: 'FinanceWithdrawal',
+      component: '/finance/withdrawal',
+      meta: { title: '提现申请', keepAlive: true }
+    }
+  ]
+}

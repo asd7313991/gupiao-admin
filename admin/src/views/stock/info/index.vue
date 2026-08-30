@@ -1,0 +1,355 @@
+<template>
+  <div class="stock-page art-full-height">
+    <ArtSearchBar
+      v-model="filters"
+      :items="searchItems"
+      :is-expand="true"
+      :show-expand="false"
+      @search="search"
+      @reset="reset"
+    />
+    <ElCard class="art-table-card"
+      ><ArtTableHeader :loading="loading" @refresh="load"
+        ><template #left
+          ><ElButton type="warning" :loading="syncing" @click="sync">同步东方财富</ElButton
+          ><ElButton @click="openEditor()">添加股票</ElButton></template
+        ></ArtTableHeader
+      >
+      <div class="stock-table-wrap"
+        ><ElTable v-loading="loading" :data="rows" height="100%" @sort-change="handleSort"
+          ><ElTableColumn type="selection" width="42" /><ElTableColumn
+            prop="id"
+            label="ID"
+            width="70"
+            sortable="custom"
+          /><ElTableColumn prop="code" label="股票代码" /><ElTableColumn
+            prop="symbol"
+            label="完整代码"
+          /><ElTableColumn prop="market" label="市场" /><ElTableColumn
+            prop="name"
+            label="名称"
+            min-width="130"
+          /><ElTableColumn prop="exchange" label="交易所" /><ElTableColumn
+            prop="board"
+            label="板块名称"
+          /><ElTableColumn prop="last_price" label="最新价" sortable="custom"
+            ><template #default="{ row }">{{ row.last_price?.toFixed(2) }}</template></ElTableColumn
+          ><ElTableColumn prop="change_rate" label="涨跌幅" sortable="custom"
+            ><template #default="{ row }"
+              ><span :class="row.change_rate >= 0 ? 'up' : 'down'"
+                >{{ row.change_rate?.toFixed(2) }}%</span
+              ></template
+            ></ElTableColumn
+          ><ElTableColumn label="状态" width="100"
+            ><template #default="{ row }"
+              ><ElSwitch
+                :model-value="row.status === 1"
+                @change="toggleStatus(row)" /></template></ElTableColumn
+          ><ElTableColumn prop="source" label="数据来源" min-width="120" /><ElTableColumn
+            label="更新时间"
+            min-width="165"
+            ><template #default="{ row }">{{ time(row.updated_at) }}</template></ElTableColumn
+          ><ElTableColumn label="操作" width="78" fixed="right"
+            ><template #default="{ row }"
+              ><ElDropdown trigger="click"
+                ><ElButton text>操作</ElButton
+                ><template #dropdown
+                  ><ElDropdownMenu
+                    ><ElDropdownItem @click="openEditor(row)">编辑</ElDropdownItem
+                    ><ElDropdownItem divided class="danger" @click="remove(row)"
+                      >删除</ElDropdownItem
+                    ></ElDropdownMenu
+                  ></template
+                ></ElDropdown
+              ></template
+            ></ElTableColumn
+          ></ElTable
+        ></div
+      >
+      <div class="pager"
+        ><span>共 {{ total }} 条</span
+        ><ElPagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          :page-sizes="[20, 50, 100]"
+          :total="total"
+          layout="prev, pager, next, sizes"
+          @current-change="load"
+          @size-change="changePageSize"
+      /></div>
+    </ElCard>
+    <ElDialog v-model="visible" :title="current?.id ? '编辑股票' : '添加股票'" width="560px"
+      ><ElForm label-width="90px"
+        ><ElRow :gutter="16"
+          ><ElCol :span="12"
+            ><ElFormItem label="股票代码" required
+              ><ElInput v-model="form.code" /></ElFormItem></ElCol
+          ><ElCol :span="12"
+            ><ElFormItem label="完整代码"
+              ><ElInput
+                v-model="form.symbol"
+                placeholder="如 600000.SH" /></ElFormItem></ElCol></ElRow
+        ><ElRow :gutter="16"
+          ><ElCol :span="12"
+            ><ElFormItem label="股票名称" required
+              ><ElInput v-model="form.name" /></ElFormItem></ElCol
+          ><ElCol :span="12"
+            ><ElFormItem label="市场"
+              ><ElSelect v-model="form.market" style="width: 100%"
+                ><ElOption label="A股" value="A股" /><ElOption label="港股" value="港股" /><ElOption
+                  label="美股"
+                  value="美股" /></ElSelect></ElFormItem></ElCol></ElRow
+        ><ElFormItem label="交易所"><ElInput v-model="form.exchange" /></ElFormItem
+        ><ElRow :gutter="16"
+          ><ElCol :span="12"
+            ><ElFormItem label="最新价"
+              ><ElInputNumber
+                v-model="form.last_price"
+                :min="0"
+                :precision="2" /></ElFormItem></ElCol
+          ><ElCol :span="12"
+            ><ElFormItem label="涨跌幅"
+              ><ElInputNumber
+                v-model="form.change_rate"
+                :precision="2" /></ElFormItem></ElCol></ElRow
+        ><ElFormItem label="状态"
+          ><ElSwitch
+            v-model="enabled"
+            active-text="启用"
+            inactive-text="停用" /></ElFormItem></ElForm
+      ><template #footer
+        ><ElButton @click="visible = false">取消</ElButton
+        ><ElButton type="primary" @click="save">确定</ElButton></template
+      ></ElDialog
+    >
+  </div>
+</template>
+<script setup lang="ts">
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    deleteStockSecurity,
+    fetchStockBoards,
+    fetchStockExchanges,
+    fetchStockSecurities,
+    saveStockSecurity,
+    syncEastmoneySecurities,
+    updateStockSecurityStatus,
+    type StockSecurity
+  } from '@/api/system-manage'
+  defineOptions({ name: 'StockInfo' })
+  const loading = ref(false),
+    syncing = ref(false),
+    rows = ref<StockSecurity[]>([]),
+    total = ref(0),
+    page = ref(1),
+    pageSize = ref(20),
+    sortBy = ref<'id' | 'last_price' | 'change_rate' | undefined>(),
+    sortOrder = ref<'asc' | 'desc' | undefined>(),
+    exchangeOptions = ref<{ label: string; value: string }[]>([]),
+    boardOptions = ref<{ label: string; value: string }[]>([]),
+    filters = reactive({ symbol: '', name: '', market: '', exchange: '', board: '' })
+  const searchItems = computed(() => [
+    { label: '完整代码', key: 'symbol', type: 'input', props: { placeholder: '请输入完整代码' } },
+    { label: '股票名称', key: 'name', type: 'input', props: { placeholder: '请输入股票名称' } },
+    {
+      label: '市场',
+      key: 'market',
+      type: 'select',
+      props: {
+        placeholder: '全部',
+        options: [
+          { label: 'A股', value: 'A股' },
+          { label: '港股', value: '港股' },
+          { label: '美股', value: '美股' }
+        ]
+      }
+    },
+    {
+      label: '交易所',
+      key: 'exchange',
+      type: 'select',
+      props: {
+        placeholder: '全部交易所',
+        filterable: true,
+        clearable: true,
+        options: exchangeOptions.value
+      }
+    },
+    {
+      label: '板块名称',
+      key: 'board',
+      type: 'select',
+      props: {
+        placeholder: '全部板块',
+        filterable: true,
+        clearable: true,
+        options: boardOptions.value
+      }
+    }
+  ])
+  const load = async () => {
+    loading.value = true
+    try {
+      const data = await fetchStockSecurities({
+        page: page.value,
+        pageSize: pageSize.value,
+        ...filters,
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value
+      })
+      rows.value = data.records
+      total.value = data.total
+    } finally {
+      loading.value = false
+    }
+  }
+  const search = () => {
+    page.value = 1
+    load()
+  }
+  const reset = () => {
+    Object.assign(filters, { symbol: '', name: '', market: '', exchange: '', board: '' })
+    page.value = 1
+    sortBy.value = undefined
+    sortOrder.value = undefined
+    load()
+  }
+  const changePageSize = () => {
+    page.value = 1
+    load()
+  }
+  const handleSort = (sort: { prop: string; order: 'ascending' | 'descending' | null }) => {
+    sortBy.value = ['id', 'last_price', 'change_rate'].includes(sort.prop)
+      ? (sort.prop as 'id' | 'last_price' | 'change_rate')
+      : undefined
+    sortOrder.value =
+      sort.order === 'ascending' ? 'asc' : sort.order === 'descending' ? 'desc' : undefined
+    page.value = 1
+    load()
+  }
+  const time = (v: number) =>
+    v ? new Date(v * 1000).toLocaleString('zh-CN', { hour12: false }) : '--'
+  const visible = ref(false),
+    current = ref<StockSecurity | null>(null),
+    enabled = ref(true),
+    form = reactive({
+      code: '',
+      symbol: '',
+      name: '',
+      market: 'A股',
+      exchange: '',
+      last_price: 0,
+      change_rate: 0
+    })
+  const openEditor = (row?: StockSecurity) => {
+    current.value = row || null
+    Object.assign(form, {
+      code: row?.code || '',
+      symbol: row?.symbol || '',
+      name: row?.name || '',
+      market: row?.market || 'A股',
+      exchange: row?.exchange || '',
+      last_price: row?.last_price || 0,
+      change_rate: row?.change_rate || 0
+    })
+    enabled.value = (row?.status ?? 1) === 1
+    visible.value = true
+  }
+  const loadExchanges = async () => {
+    exchangeOptions.value = (await fetchStockExchanges()).map((item) => ({
+      label: item,
+      value: item
+    }))
+    boardOptions.value = (await fetchStockBoards()).map((item) => ({ label: item, value: item }))
+  }
+  const save = async () => {
+    if (!form.code.trim() || !form.name.trim()) return ElMessage.warning('请填写股票代码和名称')
+    await saveStockSecurity({
+      id: current.value?.id,
+      ...form,
+      status: enabled.value ? 1 : 2,
+      source: current.value?.source || 'manual'
+    })
+    ElMessage.success('证券已保存')
+    visible.value = false
+    await loadExchanges()
+    load()
+  }
+  const toggleStatus = async (row: StockSecurity) => {
+    await updateStockSecurityStatus(row.id, row.status === 1 ? 2 : 1)
+    ElMessage.success('证券状态已更新')
+    load()
+  }
+  const remove = async (row: StockSecurity) => {
+    await ElMessageBox.confirm(`确定删除证券「${row.name}」吗？`, '删除证券', { type: 'warning' })
+    await deleteStockSecurity(row.id)
+    ElMessage.success('证券已删除')
+    await loadExchanges()
+    load()
+  }
+  const sync = async () => {
+    syncing.value = true
+    try {
+      const result = await syncEastmoneySecurities()
+      ElMessage.success(`同步完成，处理 ${result.synced} 条证券`)
+      page.value = 1
+      await loadExchanges()
+      load()
+    } finally {
+      syncing.value = false
+    }
+  }
+  onMounted(async () => {
+    await loadExchanges()
+    load()
+  })
+</script>
+<style scoped>
+  .stock-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .art-table-card {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .art-table-card :deep(.el-card__body) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .stock-table-wrap {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .pager {
+    display: flex;
+    flex: none;
+    gap: 14px;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 14px 0 0;
+  }
+
+  .up {
+    color: var(--el-color-danger);
+  }
+
+  .down {
+    color: var(--el-color-success);
+  }
+
+  .danger {
+    color: var(--el-color-danger);
+  }
+
+  :deep(.el-input-number) {
+    width: 100%;
+  }
+</style>

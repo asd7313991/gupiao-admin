@@ -6,12 +6,16 @@ import request from '@/utils/http'
  * @returns 登录响应
  */
 export function fetchLogin(params: Api.Auth.LoginParams) {
-  return request.post<Api.Auth.LoginResponse>({
-    url: '/api/auth/login',
-    params
-    // showSuccessMessage: true // 显示成功消息
-    // showErrorMessage: false // 不显示错误消息
-  })
+  return request
+    .post<{ access_token: string }>({
+      url: '/server-api/private/admin/system/user/login',
+      params: {
+        tenant_code: 'platform',
+        account: params.userName.toLowerCase(),
+        password: params.password
+      }
+    })
+    .then((data) => ({ token: data.access_token, refreshToken: '' }))
 }
 
 /**
@@ -19,11 +23,15 @@ export function fetchLogin(params: Api.Auth.LoginParams) {
  * @returns 用户信息
  */
 export function fetchGetUserInfo() {
-  return request.get<Api.Auth.UserInfo>({
-    url: '/api/user/info'
-    // 自定义请求头
-    // headers: {
-    //   'X-Custom-Header': 'your-custom-value'
-    // }
-  })
+  return request
+    .get<{ ID: number; Username: string; Name: string; Account: string }>({
+      url: '/server-api/private/admin/system/user/info'
+    })
+    .then((data) => ({
+      userId: data.ID,
+      userName: data.Username || data.Name || data.Account,
+      email: '',
+      roles: ['R_SUPER'],
+      buttons: []
+    }))
 }

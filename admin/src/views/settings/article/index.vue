@@ -1,0 +1,256 @@
+<template>
+  <div class="article-page art-full-height">
+    <ArtSearchBar
+      v-model="filters"
+      :items="searchItems"
+      :show-expand="false"
+      @search="search"
+      @reset="reset"
+    />
+    <ElCard class="art-table-card"
+      ><ArtTableHeader :loading="loading" @refresh="load"
+        ><template #left
+          ><ElButton @click="openEditor()">添加文章</ElButton></template
+        ></ArtTableHeader
+      >
+      <ElTable v-loading="loading" :data="rows"
+        ><ElTableColumn type="selection" width="42" /><ElTableColumn
+          prop="id"
+          label="ID"
+          width="70"
+        /><ElTableColumn prop="title" label="文章标题" min-width="160" /><ElTableColumn
+          prop="type"
+          label="文章类型"
+          min-width="140"
+        /><ElTableColumn label="文章内容" min-width="260"
+          ><template #default="{ row }"
+            ><span class="content-preview">{{ plainText(row.content) }}</span></template
+          ></ElTableColumn
+        ><ElTableColumn label="状态" width="100"
+          ><template #default="{ row }"
+            ><ElSwitch
+              :model-value="row.status === 1"
+              @change="toggleStatus(row)" /></template></ElTableColumn
+        ><ElTableColumn label="创建时间" min-width="165"
+          ><template #default="{ row }">{{ time(row.created_at) }}</template></ElTableColumn
+        ><ElTableColumn label="更新时间" min-width="165"
+          ><template #default="{ row }">{{ time(row.updated_at) }}</template></ElTableColumn
+        ><ElTableColumn label="操作" width="78" fixed="right"
+          ><template #default="{ row }"
+            ><ElDropdown trigger="click"
+              ><ElButton text>操作</ElButton
+              ><template #dropdown
+                ><ElDropdownMenu
+                  ><ElDropdownItem @click="openEditor(row)">编辑</ElDropdownItem
+                  ><ElDropdownItem divided class="danger" @click="remove(row)"
+                    >删除</ElDropdownItem
+                  ></ElDropdownMenu
+                ></template
+              ></ElDropdown
+            ></template
+          ></ElTableColumn
+        ></ElTable
+      >
+      <div class="pager"
+        ><span>共 {{ total }} 条</span
+        ><ElPagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          layout="prev, pager, next, sizes"
+          @current-change="load"
+          @size-change="load"
+      /></div>
+    </ElCard>
+    <ElDialog
+      v-model="visible"
+      :title="current?.id ? '编辑文章' : '添加文章'"
+      width="900px"
+      top="6vh"
+      destroy-on-close
+      ><ElForm label-width="90px"
+        ><ElFormItem label="文章标题" required
+          ><ElInput v-model="form.title" placeholder="请输入文章标题" /></ElFormItem
+        ><ElFormItem label="文章类型" required
+          ><ElSelect
+            v-model="form.type"
+            filterable
+            allow-create
+            placeholder="请输入或选择文章类型"
+            style="width: 100%"
+            ><ElOption
+              v-for="type in articleTypes"
+              :key="type"
+              :label="type"
+              :value="type" /></ElSelect></ElFormItem
+        ><ElFormItem label="文章内容" required
+          ><ArtWangEditor
+            v-model="form.content"
+            height="360px"
+            mode="simple"
+            placeholder="请输入文章内容" /></ElFormItem
+        ><ElFormItem label="状态"
+          ><ElSwitch
+            v-model="enabled"
+            active-text="启用"
+            inactive-text="停用" /></ElFormItem></ElForm
+      ><template #footer
+        ><ElButton @click="visible = false">取消</ElButton
+        ><ElButton type="primary" @click="save">确定</ElButton></template
+      ></ElDialog
+    >
+  </div>
+</template>
+<script setup lang="ts">
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    deleteAppArticle,
+    fetchAppArticles,
+    saveAppArticle,
+    updateAppArticleStatus,
+    type AppArticle
+  } from '@/api/system-manage'
+  defineOptions({ name: 'SettingsArticle' })
+  const loading = ref(false),
+    rows = ref<AppArticle[]>([]),
+    total = ref(0),
+    page = ref(1),
+    pageSize = ref(20),
+    filters = reactive({ title: '', type: '', status: '' }),
+    articleTypes = [
+      '新手必看',
+      '法律声明',
+      '帮助中心',
+      '隐私协议',
+      '关于我们',
+      '常见问题',
+      '费用收取（A股）',
+      '交易规则（A股）',
+      '充值公告',
+      '风险提示书'
+    ]
+  const searchItems = [
+    { label: '文章标题', key: 'title', type: 'input', props: { placeholder: '请输入文章标题' } },
+    {
+      label: '文章类型',
+      key: 'type',
+      type: 'select',
+      props: {
+        placeholder: '请选择类型',
+        options: articleTypes.map((value) => ({ label: value, value }))
+      }
+    },
+    {
+      label: '状态',
+      key: 'status',
+      type: 'select',
+      props: {
+        placeholder: '请选择状态',
+        options: [
+          { label: '启用', value: '1' },
+          { label: '停用', value: '2' }
+        ]
+      }
+    }
+  ]
+  const load = async () => {
+    loading.value = true
+    try {
+      const data = await fetchAppArticles({
+        page: page.value,
+        pageSize: pageSize.value,
+        ...filters
+      })
+      rows.value = data.records
+      total.value = data.total
+    } finally {
+      loading.value = false
+    }
+  }
+  const search = () => {
+    page.value = 1
+    load()
+  }
+  const reset = () => {
+    Object.assign(filters, { title: '', type: '', status: '' })
+    page.value = 1
+    load()
+  }
+  const time = (v: string) => (v ? new Date(v).toLocaleString('zh-CN', { hour12: false }) : '--')
+  const plainText = (html: string) =>
+    html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .trim()
+  const visible = ref(false),
+    current = ref<AppArticle | null>(null),
+    enabled = ref(true),
+    form = reactive({ title: '', type: '', content: '' })
+  const openEditor = (row?: AppArticle) => {
+    current.value = row || null
+    Object.assign(form, {
+      title: row?.title || '',
+      type: row?.type || '',
+      content: row?.content || ''
+    })
+    enabled.value = (row?.status ?? 1) === 1
+    visible.value = true
+  }
+  const save = async () => {
+    if (!form.title.trim() || !form.type.trim() || !plainText(form.content))
+      return ElMessage.warning('请填写文章标题、类型和内容')
+    await saveAppArticle({
+      id: current.value?.id,
+      title: form.title.trim(),
+      type: form.type.trim(),
+      content: form.content,
+      status: enabled.value ? 1 : 2
+    })
+    ElMessage.success('文章已保存')
+    visible.value = false
+    load()
+  }
+  const toggleStatus = async (row: AppArticle) => {
+    await updateAppArticleStatus(row.id, row.status === 1 ? 2 : 1)
+    ElMessage.success('文章状态已更新')
+    load()
+  }
+  const remove = async (row: AppArticle) => {
+    await ElMessageBox.confirm(`确定删除文章「${row.title}」吗？`, '删除文章', { type: 'warning' })
+    await deleteAppArticle(row.id)
+    ElMessage.success('文章已删除')
+    load()
+  }
+  onMounted(load)
+</script>
+<style scoped>
+  .article-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .art-table-card {
+    flex: 1;
+  }
+
+  .content-preview {
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 1.6;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .pager {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 14px;
+  }
+
+  .danger {
+    color: var(--el-color-danger);
+  }
+</style>

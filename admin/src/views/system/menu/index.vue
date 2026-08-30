@@ -55,7 +55,16 @@
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
-  import { fetchGetMenuList } from '@/api/system-manage'
+  import {
+    createServerMenu,
+    createServerMenuAuth,
+    deleteServerMenu,
+    deleteServerMenuAuth,
+    fetchServerMenuList,
+    type ServerMenu,
+    updateServerMenu,
+    updateServerMenuAuth
+  } from '@/api/system-manage'
   import { ElTag, ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'Menus' })
@@ -106,8 +115,8 @@
     loading.value = true
 
     try {
-      const list = await fetchGetMenuList()
-      tableData.value = list
+      const list = await fetchServerMenuList()
+      tableData.value = convertServerMenuTree(list)
     } catch (error) {
       throw error instanceof Error ? error : new Error('获取菜单失败')
     } finally {
@@ -205,7 +214,7 @@
             }),
             h(ArtButtonTable, {
               type: 'delete',
-              onClick: () => handleDeleteAuth()
+              onClick: () => handleDeleteAuth(row)
             })
           ])
         }
@@ -213,7 +222,7 @@
         return h('div', buttonStyle, [
           h(ArtButtonTable, {
             type: 'add',
-            onClick: () => handleAddAuth(),
+            onClick: () => handleAddAuth(row),
             title: '新增权限'
           }),
           h(ArtButtonTable, {
@@ -222,7 +231,7 @@
           }),
           h(ArtButtonTable, {
             type: 'delete',
-            onClick: () => handleDeleteMenu()
+            onClick: () => handleDeleteMenu(row)
           })
         ])
       }
@@ -231,6 +240,18 @@
 
   // 数据相关
   const tableData = ref<AppRouteRecord[]>([])
+
+  const convertServerMenuTree = (items: ServerMenu[]): AppRouteRecord[] => {
+    return items.map((item) => ({
+      id: item.id,
+      path: item.path,
+      name: item.name,
+      component: item.component,
+      meta: item.meta,
+      children: item.children ? convertServerMenuTree(item.children) : undefined,
+      parentId: item.parentId
+    })) as AppRouteRecord[]
+  }
 
   /**
    * 重置搜索条件
@@ -290,14 +311,16 @@
 
       if (item.meta?.authList?.length) {
         const authChildren: AppRouteRecord[] = item.meta.authList.map(
-          (auth: { title: string; authMark: string }) => ({
+          (auth: { id?: number; title: string; authMark: string }) => ({
+            id: auth.id,
             path: `${item.path}_auth_${auth.authMark}`,
             name: `${String(item.name)}_auth_${auth.authMark}`,
             meta: {
               title: auth.title,
               authMark: auth.authMark,
               isAuthButton: true,
-              parentPath: item.path
+              parentPath: item.path,
+              parentMenuId: item.id
             }
           })
         )
@@ -364,9 +387,9 @@
   /**
    * 添加权限按钮
    */
-  const handleAddAuth = (): void => {
-    dialogType.value = 'menu'
-    editData.value = null
+  const handleAddAuth = (menu: AppRouteRecord): void => {
+    dialogType.value = 'button'
+    editData.value = { menuId: menu.id }
     lockMenuType.value = false
     dialogVisible.value = true
   }
@@ -390,7 +413,9 @@
     dialogType.value = 'button'
     editData.value = {
       title: row.meta?.title,
-      authMark: row.meta?.authMark
+      authMark: row.meta?.authMark,
+      id: row.id,
+      menuId: row.meta?.parentMenuId
     }
     lockMenuType.value = false
     dialogVisible.value = true
@@ -413,24 +438,59 @@
    * 提交表单数据
    * @param formData 表单数据
    */
-  const handleSubmit = (formData: MenuFormData): void => {
-    console.log('提交数据:', formData)
-    // TODO: 调用API保存数据
-    getMenuList()
+  const handleSubmit = async (formData: MenuFormData): Promise<void> => {
+    if (formData.menuType === 'button') {
+      const authData = {
+        menu_id: formData.parentId,
+        title: formData.authName,
+        mark: formData.authLabel
+      }
+      if (formData.id) {
+        await updateServerMenuAuth({ id: formData.id, ...authData })
+      } else {
+        await createServerMenuAuth(authData)
+      }
+    } else {
+      const menuData = {
+        path: formData.path,
+        name: formData.label,
+        component: formData.component,
+        title: formData.name,
+        icon: formData.icon,
+        showBadge: formData.showBadge ? 1 : 2,
+        showTextBadge: formData.showTextBadge,
+        isHide: formData.isHide ? 1 : 2,
+        isHideTab: formData.isHideTab ? 1 : 2,
+        link: formData.link,
+        isIframe: formData.isIframe ? 1 : 2,
+        keepAlive: formData.keepAlive ? 1 : 2,
+        isFirstLevel: formData.parentId === 0 ? 1 : 2,
+        status: formData.isEnable ? 1 : 2,
+        parentId: formData.parentId || 0,
+        sort: formData.sort || 1
+      }
+      if (formData.id) {
+        await updateServerMenu({ id: formData.id, ...menuData })
+      } else {
+        await createServerMenu(menuData)
+      }
+    }
+    await getMenuList()
   }
 
   /**
    * 删除菜单
    */
-  const handleDeleteMenu = async (): Promise<void> => {
+  const handleDeleteMenu = async (row: AppRouteRecord): Promise<void> => {
     try {
       await ElMessageBox.confirm('确定要删除该菜单吗？删除后无法恢复', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       })
+      await deleteServerMenu(row.id as number)
       ElMessage.success('删除成功')
-      getMenuList()
+      await getMenuList()
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除失败')
@@ -441,15 +501,16 @@
   /**
    * 删除权限按钮
    */
-  const handleDeleteAuth = async (): Promise<void> => {
+  const handleDeleteAuth = async (row: AppRouteRecord): Promise<void> => {
     try {
       await ElMessageBox.confirm('确定要删除该权限吗？删除后无法恢复', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       })
+      await deleteServerMenuAuth(row.id as number)
       ElMessage.success('删除成功')
-      getMenuList()
+      await getMenuList()
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除失败')
