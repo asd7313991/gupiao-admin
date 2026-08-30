@@ -1,0 +1,3 @@
+[submodule "server"]
+	path = server
+	url = https://github.com/ChnMig/art-design-pro-edge-go-server.git
