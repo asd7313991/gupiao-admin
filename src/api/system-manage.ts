@@ -283,6 +283,8 @@ export interface TradePosition {
   current_price: number
   cost_price: number
   total_cost: number
+  margin: number
+  leverage: number
   market_value: number
   profit_loss: number
   profit_rate: number

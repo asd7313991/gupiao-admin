@@ -161,6 +161,11 @@
     maxSyncRows: 10000
   }
   const defaultBranding = { productName: '证券行情', logo: '' }
+  const defaultRisk = {
+    managementFeePerTenThousand: 2.8,
+    marginCallStart: 16,
+    marginCallRate: 0.005
+  }
   const loading = ref(false),
     editing = ref(false),
     uploading = ref(false),
@@ -170,7 +175,7 @@
       branding: { ...defaultBranding },
       trade: {},
       stockSync: { ...defaultStockSync },
-      risk: {},
+      risk: { ...defaultRisk },
       recharge: {},
       limits: {},
       links: {}
@@ -189,7 +194,6 @@
     ['minCommission', '最小佣金', 'number'],
     ['stampDuty', '印花税费率', 'number'],
     ['transferFee', '过户费率', 'number'],
-    ['managementFee', '管理费率', 'number'],
     ['morningStart', '早上开始时间', 'time'],
     ['morningEnd', '早上结束时间', 'time'],
     ['afternoonStart', '下午开始时间', 'time'],
@@ -206,7 +210,10 @@
   const riskFields = fields([
     ['defaultLeverage', '默认杠杆倍数', 'number'],
     ['forceCloseRatio', '强制平仓比例', 'number'],
-    ['appLeverageEnabled', 'App可用资金是否乘杠杆倍数', 'boolean']
+    ['appLeverageEnabled', 'App可用资金是否乘杠杆倍数', 'boolean'],
+    ['managementFeePerTenThousand', '每日持仓管理费（元/万元）', 'number'],
+    ['marginCallStart', '风险补仓起始亏损（%）', 'number'],
+    ['marginCallRate', '每跌1%补充市值比例', 'number']
   ])
   const rechargeFields = fields([
     ['minRecharge', '最小充值金额', 'number'],
@@ -242,6 +249,13 @@
       const data = await fetchAppSystemSetting()
       Object.assign(setting, data, {
         branding: { ...defaultBranding, ...data.branding },
+        risk: {
+          ...defaultRisk,
+          ...data.risk,
+          managementFeePerTenThousand:
+            data.risk?.managementFeePerTenThousand ??
+            Number(data.trade?.managementFee ?? 0.00028) * 10000
+        },
         stockSync: { ...defaultStockSync, ...data.stockSync }
       })
       snapshot.value = JSON.stringify(setting)
