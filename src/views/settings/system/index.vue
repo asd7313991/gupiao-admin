@@ -233,7 +233,7 @@
     ['growthBoard', '创业板买入限制', 'number'],
     ['minStarShares', '科创板最小买入股数', 'number'],
     ['stTrade', 'ST股票交易', 'boolean'],
-    ['newStockTrade', 'N股（新股）交易', 'boolean']
+    ['newStockTrade', '上市当日新股交易', 'boolean']
   ])
   const linkFields = fields([
     ['customerService', '在线客服链接', 'text'],
