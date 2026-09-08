@@ -76,8 +76,8 @@
         ><ElTabPane label="A股"
           ><SettingsBlock
             :editing="editing"
-            :data="setting.trade"
-            :fields="tradeFields" /></ElTabPane
+            :data="setting.hkTrade"
+            :fields="hkTradeFields" /></ElTabPane
         ><ElTabPane label="港股"
           ><SettingsBlock
             :editing="editing"
@@ -166,6 +166,14 @@
     marginCallStart: 16,
     marginCallRate: 0.005
   }
+  const defaultHKTrade = {
+    commission: 0.00025,
+    minCommission: 15,
+    stampDuty: 0.001,
+    regulatoryFee: 0.000027,
+    tradingFee: 0.0000565,
+    settlementFee: 0.000042
+  }
   const loading = ref(false),
     editing = ref(false),
     uploading = ref(false),
@@ -174,6 +182,7 @@
     setting = reactive<AppSystemSetting>({
       branding: { ...defaultBranding },
       trade: {},
+      hkTrade: { ...defaultHKTrade },
       stockSync: { ...defaultStockSync },
       risk: { ...defaultRisk },
       recharge: {},
@@ -200,6 +209,14 @@
     ['afternoonEnd', '下午结束时间', 'time'],
     ['allDay', '测试模式：强制开启全天交易', 'boolean'],
     ['nonTradingFee', '非交易日收费', 'boolean']
+  ])
+  const hkTradeFields = fields([
+    ['commission', '佣金费率（买卖双向）', 'number'],
+    ['minCommission', '最低佣金（每笔）', 'number'],
+    ['stampDuty', '印花税费率（仅卖出）', 'number'],
+    ['regulatoryFee', '证监会征费率（买卖双向）', 'number'],
+    ['tradingFee', '交易费率（买卖双向）', 'number'],
+    ['settlementFee', '系统交收费率（买卖双向）', 'number']
   ])
   const stockSyncFields = fields([
     ['enabled', '启用定时同步', 'boolean'],
@@ -249,6 +266,7 @@
       const data = await fetchAppSystemSetting()
       Object.assign(setting, data, {
         branding: { ...defaultBranding, ...data.branding },
+        hkTrade: { ...defaultHKTrade, ...data.hkTrade },
         risk: {
           ...defaultRisk,
           ...data.risk,

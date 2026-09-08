@@ -362,6 +362,7 @@ export interface AppSystemSetting {
     logo: string
   }
   trade: Record<string, any>
+  hkTrade: Record<string, any>
   stockSync: Record<string, any>
   risk: Record<string, any>
   recharge: Record<string, any>
