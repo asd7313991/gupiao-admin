@@ -76,13 +76,13 @@
         ><ElTabPane label="A股"
           ><SettingsBlock
             :editing="editing"
-            :data="setting.hkTrade"
-            :fields="hkTradeFields" /></ElTabPane
+            :data="setting.trade"
+            :fields="tradeFields" /></ElTabPane
         ><ElTabPane label="港股"
           ><SettingsBlock
             :editing="editing"
-            :data="setting.trade"
-            :fields="tradeFields" /></ElTabPane></ElTabs
+            :data="setting.hkTrade"
+            :fields="hkTradeFields" /></ElTabPane></ElTabs
     ></ElCard>
     <div class="grid"
       ><ElCard shadow="never" class="panel"
