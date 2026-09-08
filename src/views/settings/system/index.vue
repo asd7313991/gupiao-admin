@@ -202,7 +202,7 @@
     ['sellCommission', '卖出佣金费率', 'number'],
     ['minCommission', '最小佣金', 'number'],
     ['stampDuty', '印花税费率', 'number'],
-    ['transferFee', '过户费率', 'number'],
+    ['transferFee', '过户费率（沪市双向，其他市场仅卖出）', 'number'],
     ['morningStart', '早上开始时间', 'time'],
     ['morningEnd', '早上结束时间', 'time'],
     ['afternoonStart', '下午开始时间', 'time'],
