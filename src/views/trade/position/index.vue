@@ -60,12 +60,19 @@
           ></ElTableColumn
         ><ElTableColumn label="买入日期" min-width="160"
           ><template #default="{ row }">{{ time(row.buy_at) }}</template></ElTableColumn
-        ><ElTableColumn label="操作" width="112" fixed="right"
+        ><ElTableColumn label="操作" width="150" fixed="right"
           ><template #default="{ row }"
             ><div class="action-buttons"
               ><ElTooltip content="编辑持仓"
                 ><ElButton text class="icon-button" @click="openEditor(row)"
                   ><ElIcon><EditPen /></ElIcon></ElButton></ElTooltip
+              ><ElTooltip content="按当前价格强平"
+                ><ElButton
+                  text
+                  class="icon-button danger"
+                  :disabled="row.position_qty <= 0 || row.status !== 1"
+                  @click="forceClose(row)"
+                  ><ElIcon><CircleCloseFilled /></ElIcon></ElButton></ElTooltip
               ><ElTooltip content="删除持仓"
                 ><ElButton text class="icon-button danger" @click="remove(row)"
                   ><ElIcon
@@ -132,11 +139,12 @@
   </div>
 </template>
 <script setup lang="ts">
-  import { Delete, EditPen } from '@element-plus/icons-vue'
+  import { CircleCloseFilled, Delete, EditPen } from '@element-plus/icons-vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     deleteTradePosition,
     fetchTradePositions,
+    forceCloseTradePosition,
     saveTradePosition,
     type TradePosition
   } from '@/api/system-manage'
@@ -219,6 +227,20 @@
     await ElMessageBox.confirm(`确定删除 ${row.symbol} 持仓吗？`, '删除持仓', { type: 'warning' })
     await deleteTradePosition(row.id)
     ElMessage.success('持仓已删除')
+    load()
+  }
+  const forceClose = async (row: TradePosition) => {
+    await ElMessageBox.confirm(
+      `确定按当前股价强制卖出 ${row.stock_name}（${row.symbol}）全部 ${row.position_qty} 股吗？`,
+      '强平确认',
+      {
+        type: 'warning',
+        confirmButtonText: '确认强平',
+        cancelButtonText: '取消'
+      }
+    )
+    const result = await forceCloseTradePosition(row.id)
+    ElMessage.success(`强平成功：${result.quantity} 股，成交价 ${result.price.toFixed(2)}`)
     load()
   }
   onMounted(load)

@@ -164,7 +164,7 @@
   const defaultRisk = {
     managementFeePerTenThousand: 2.8,
     marginCallStart: 16,
-    marginCallRate: 0.005
+    marginCallRate: 0.01
   }
   const defaultHKTrade = {
     commission: 0.00025,
@@ -229,8 +229,8 @@
     ['forceCloseRatio', '强制平仓比例', 'number'],
     ['appLeverageEnabled', 'App可用资金是否乘杠杆倍数', 'boolean'],
     ['managementFeePerTenThousand', '每日持仓管理费（元/万元）', 'number'],
-    ['marginCallStart', '风险补仓起始亏损（%）', 'number'],
-    ['marginCallRate', '每跌1%补充市值比例', 'number']
+    ['marginCallStart', '股票下跌触发补仓（%）', 'number'],
+    ['marginCallRate', '每跌1%补充当前市值比例（1%=0.01）', 'number']
   ])
   const rechargeFields = fields([
     ['minRecharge', '最小充值金额', 'number'],

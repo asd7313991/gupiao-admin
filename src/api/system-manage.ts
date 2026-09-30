@@ -310,6 +310,22 @@ export function saveTradePosition(
 export function deleteTradePosition(id: number) {
   return request.del<void>({ url: tradeUrl, params: { id } })
 }
+export interface ForceCloseTradePositionResult {
+  id: number
+  customer_id: number
+  symbol: string
+  price: number
+  quantity: number
+  amount: number
+  realized: number
+  balance_after: number
+}
+export function forceCloseTradePosition(id: number) {
+  return request.post<ForceCloseTradePositionResult>({
+    url: `${tradeUrl}/force-close`,
+    params: { id }
+  })
+}
 
 export interface TradeRecord {
   id: number
