@@ -1,1 +1,2 @@
+. "$(dirname "$0")/node-env.sh"
 corepack pnpm run lint:lint-staged
