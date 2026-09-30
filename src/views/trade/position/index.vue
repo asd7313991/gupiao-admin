@@ -154,24 +154,11 @@
     filters = reactive({
       phone: '',
       symbol: '',
-      stock_name: '',
-      status: undefined as number | undefined
+      stock_name: ''
     })
   const searchItems = [
     { label: '手机号', key: 'phone', type: 'input', props: { placeholder: '请输入手机号' } },
     { label: '完整代码', key: 'symbol', type: 'input', props: { placeholder: '请输入完整代码' } },
-    {
-      label: '状态',
-      key: 'status',
-      type: 'select',
-      props: {
-        placeholder: '全部',
-        options: [
-          { label: '持有', value: 1 },
-          { label: '已关闭', value: 2 }
-        ]
-      }
-    },
     {
       label: '股票名称',
       key: 'stock_name',
@@ -188,7 +175,7 @@
     }
   }
   const reset = () => {
-    Object.assign(filters, { phone: '', symbol: '', stock_name: '', status: undefined })
+    Object.assign(filters, { phone: '', symbol: '', stock_name: '' })
     load()
   }
   const money = (v: number) => `¥${v.toFixed(2)}`,
