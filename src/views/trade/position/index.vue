@@ -81,14 +81,14 @@
     </ElCard>
     <ElDialog v-model="visible" :title="current?.id ? '编辑持仓' : '添加持仓'" width="680px"
       ><ElForm label-width="105px"
-        ><ElFormItem label="用户ID" v-if="!current"
-          ><ElInputNumber v-model="form.customer_id" :min="1" /></ElFormItem
-        ><ElFormItem label="股票代码"
+        ><ElFormItem label="手机号" required v-if="!current"
+          ><ElInput v-model="form.phone" placeholder="请输入手机号" /></ElFormItem
+        ><ElFormItem label="股票代码" required
           ><ElInput
             v-model="form.symbol"
             :disabled="!!current"
-            placeholder="如 600726.SH" /></ElFormItem
-        ><ElFormItem label="股票名称"
+            placeholder="请输入股票代码（如：sh000001、000001、000001.SZ）" /></ElFormItem
+        ><ElFormItem label="股票名称" v-if="current"
           ><ElInput v-model="form.stock_name" :disabled="!!current" /></ElFormItem
         ><ElRow :gutter="16"
           ><ElCol :span="12"
@@ -104,7 +104,14 @@
                 v-model="form.position_qty"
                 :min="0"
                 :precision="0" /></ElFormItem></ElCol></ElRow
-        ><ElRow :gutter="16"
+        ><ElFormItem label="创建时间" v-if="!current"
+          ><ElDatePicker
+            v-model="form.buy_at"
+            type="datetime"
+            value-format="X"
+            placeholder="选择创建时间（可选）"
+            style="width: 100%" /></ElFormItem
+        ><ElRow :gutter="16" v-if="current"
           ><ElCol :span="12"
             ><ElFormItem label="可用数量"
               ><ElInputNumber
@@ -118,8 +125,6 @@
                 :min="1"
                 :max="20"
                 :precision="2" /></ElFormItem></ElCol></ElRow
-        ><ElFormItem label="当前价格" v-if="!current"
-          ><ElInputNumber v-model="form.current_price" :min="0" :precision="4" /></ElFormItem
         ><ElFormItem label="仓位变动记录" v-if="current"
           ><ElRadioGroup v-model="form.record_change"
             ><ElRadio :value="true">记录</ElRadio
@@ -181,7 +186,8 @@
   const money = (v: number) => `¥${v.toFixed(2)}`,
     time = (v: number) => new Date(v * 1000).toLocaleString('zh-CN', { hour12: false })
   const empty = () => ({
-    customer_id: 1,
+    phone: '',
+    customer_id: 0,
     symbol: '',
     stock_name: '',
     currency: 'CNY',
@@ -189,7 +195,8 @@
     available_qty: 0,
     current_price: 0,
     cost_price: 0,
-    leverage: 5,
+    leverage: 1,
+    buy_at: 0,
     record_change: false
   })
   const visible = ref(false),
@@ -203,9 +210,19 @@
     visible.value = true
   }
   const save = async () => {
+    if (!current.value && !/^1\d{10}$/.test(form.phone.trim())) {
+      return ElMessage.warning('请输入正确的手机号码')
+    }
     if (!form.symbol) return ElMessage.warning('请输入证券代码')
+    if (form.cost_price <= 0) return ElMessage.warning('持仓均价必须大于 0')
+    if (form.position_qty <= 0) return ElMessage.warning('持仓数量必须大于 0')
     if (form.available_qty > form.position_qty) return ElMessage.warning('可用数量不能大于持仓数量')
-    await saveTradePosition({ ...form, id: current.value?.id })
+    await saveTradePosition({
+      ...form,
+      phone: form.phone.trim(),
+      buy_at: Number(form.buy_at) || 0,
+      id: current.value?.id
+    })
     ElMessage.success('持仓已保存')
     visible.value = false
     load()

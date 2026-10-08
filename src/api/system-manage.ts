@@ -301,7 +301,7 @@ export function fetchTradePositions(params: {
   return request.get<TradePosition[]>({ url: tradeUrl, params })
 }
 export function saveTradePosition(
-  data: Partial<TradePosition> & { customer_id: number; symbol: string }
+  data: Partial<TradePosition> & { customer_id?: number; phone?: string; symbol: string }
 ) {
   return data.id
     ? request.put<TradePosition>({ url: tradeUrl, params: data })
