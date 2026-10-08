@@ -54,7 +54,7 @@ update_repo() {
   local name=$2
   [[ -d "$directory/.git" ]] || fail "$name 不是 Git 仓库：$directory"
   log "强制同步 $name（本地未提交改动将被覆盖）"
-  git -C "$directory" fetch --prune origin
+  git -C "$directory" fetch --prune origin "$BRANCH:refs/remotes/origin/$BRANCH"
   git -C "$directory" reset --hard
   git -C "$directory" clean -fd
   git -C "$directory" checkout -f -B "$BRANCH" "origin/$BRANCH"
