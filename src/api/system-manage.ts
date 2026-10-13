@@ -1,5 +1,6 @@
 import request from '@/utils/http'
 import { AppRouteRecord } from '@/types/router'
+import { useUserStore } from '@/store/modules/user'
 
 // 获取用户列表
 export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
@@ -146,6 +147,15 @@ export function fetchCustomers(params: CustomerQuery) {
 
 export function fetchCustomerDetail(id: number) {
   return request.get<Customer>({ url: `${customerUrl}/detail`, params: { id } })
+}
+
+export async function fetchCustomerVerificationVideo(id: number): Promise<string> {
+  const { accessToken } = useUserStore()
+  const response = await fetch(`${customerUrl}/verification-video?id=${id}`, {
+    headers: accessToken ? { Authorization: accessToken } : undefined
+  })
+  if (!response.ok) throw new Error('读取认证视频失败')
+  return URL.createObjectURL(await response.blob())
 }
 
 export function createCustomer(

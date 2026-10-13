@@ -54,10 +54,12 @@
             /><span v-else>未上传</span></template
           ></ElTableColumn
         >
-        <ElTableColumn label="认证视频"
-          ><template #default="{ row }">{{
-            row.verification_video ? '已上传' : '未上传'
-          }}</template></ElTableColumn
+        <ElTableColumn label="认证视频" width="100"
+          ><template #default="{ row }"
+            ><ElButton v-if="row.verification_video" link type="primary" @click="view(row)"
+              >查看视频</ElButton
+            ><span v-else>未上传</span></template
+          ></ElTableColumn
         >
         <ElTableColumn label="认证状态" width="100"
           ><template #default="{ row }"
@@ -125,11 +127,19 @@
             :src="detail.id_card_back"
             class="large-image"
           /><span v-else>未上传</span></ElDescriptionsItem
-        ><ElDescriptionsItem label="认证视频" :span="2">{{
-          detail.verification_video || '未上传'
-        }}</ElDescriptionsItem></ElDescriptions
+        ><ElDescriptionsItem label="认证视频" :span="2"
+          ><video
+            v-if="detailVideoURL"
+            :src="detailVideoURL"
+            controls
+            preload="metadata"
+            class="verification-video"
+          /><span v-else>{{
+            detail.verification_video ? '认证视频加载失败' : '未上传'
+          }}</span></ElDescriptionsItem
+        ></ElDescriptions
       ><template #footer
-        ><ElButton type="primary" @click="detailVisible = false">返回列表</ElButton></template
+        ><ElButton type="primary" @click="closeDetail">返回列表</ElButton></template
       ></ElDialog
     >
     <ElDialog
@@ -163,6 +173,7 @@
     batchReviewCustomerVerification,
     batchUpdateCustomerStatus,
     fetchCustomerDetail,
+    fetchCustomerVerificationVideo,
     fetchCustomers,
     reviewCustomerVerification,
     updateCustomerStatus,
@@ -199,10 +210,27 @@
   const verificationType = (status: number) =>
     status === 1 ? 'success' : status === 3 ? 'danger' : 'warning'
   const detailVisible = ref(false),
-    detail = ref<Customer | null>(null)
+    detail = ref<Customer | null>(null),
+    detailVideoURL = ref('')
+  const releaseDetailVideo = () => {
+    if (detailVideoURL.value) URL.revokeObjectURL(detailVideoURL.value)
+    detailVideoURL.value = ''
+  }
   const view = async (row: Customer) => {
-    detail.value = await fetchCustomerDetail(row.id)
+    releaseDetailVideo()
+    const customer = await fetchCustomerDetail(row.id)
+    detail.value = customer
     detailVisible.value = true
+    if (!customer.verification_video) return
+    try {
+      detailVideoURL.value = await fetchCustomerVerificationVideo(customer.id)
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : '读取认证视频失败')
+    }
+  }
+  const closeDetail = () => {
+    detailVisible.value = false
+    releaseDetailVideo()
   }
   const reviewVisible = ref(false),
     reviewState = ref(1),
@@ -259,6 +287,7 @@
     load()
   }
   onMounted(load)
+  onBeforeUnmount(releaseDetailVideo)
 </script>
 
 <style scoped>
@@ -288,6 +317,12 @@
     object-fit: cover;
     background: #fff;
     opacity: 1;
+  }
+
+  .verification-video {
+    display: block;
+    width: 100%;
+    max-height: 360px;
   }
 
   .more {
