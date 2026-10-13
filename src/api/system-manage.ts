@@ -154,7 +154,17 @@ export async function fetchCustomerVerificationVideo(id: number): Promise<string
   const response = await fetch(`${customerUrl}/verification-video?id=${id}`, {
     headers: accessToken ? { Authorization: accessToken } : undefined
   })
-  if (!response.ok) throw new Error('读取认证视频失败')
+  const contentType = response.headers.get('content-type') || ''
+  if (!response.ok || contentType.includes('application/json')) {
+    let message = '读取认证视频失败'
+    try {
+      const payload = (await response.json()) as { message?: string }
+      if (payload.message) message = payload.message
+    } catch {
+      message = `${message}（HTTP ${response.status}）`
+    }
+    throw new Error(message)
+  }
   return URL.createObjectURL(await response.blob())
 }
 
