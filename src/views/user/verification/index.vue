@@ -206,9 +206,9 @@
     load()
   }
   const verificationText = (status: number) =>
-    status === 1 ? '已审核' : status === 3 ? '已驳回' : '待审核'
+    status === 1 ? '已审核' : status === 4 ? '待审核' : status === 3 ? '已驳回' : '未认证'
   const verificationType = (status: number) =>
-    status === 1 ? 'success' : status === 3 ? 'danger' : 'warning'
+    status === 1 ? 'success' : status === 4 ? 'warning' : status === 3 ? 'danger' : 'info'
   const detailVisible = ref(false),
     detail = ref<Customer | null>(null),
     detailVideoURL = ref('')
