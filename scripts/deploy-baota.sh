@@ -9,6 +9,7 @@ MOBILE_WEB_ROOT="${MOBILE_WEB_ROOT:-/www/wwwroot/stock-mobile}"
 MOBILE_REPO_URL="${MOBILE_REPO_URL:-git@github.com:asd7313991/gupiao-stock-frontend.git}"
 BRANCH="${BRANCH:-main}"
 LOCK_FILE="${LOCK_FILE:-/tmp/gupiao-deploy.lock}"
+VERIFICATION_STORAGE_DIR="${VERIFICATION_STORAGE_DIR:-/www/wwwroot/gupiao-verification}"
 CONFIG_BACKUP_DIR=""
 
 log() { printf '\033[1;34m[%s]\033[0m %s\n' "$(date '+%F %T')" "$*"; }
@@ -100,11 +101,14 @@ build_mobile_in_docker() {
 
 [[ -d "$ADMIN_DIR" ]] || fail "后台目录不存在：$ADMIN_DIR"
 [[ -d "$SERVER_DIR" ]] || fail "后端目录不存在：$SERVER_DIR"
+install -d -m 700 "$VERIFICATION_STORAGE_DIR"
+export VERIFICATION_STORAGE_DIR
 
 CONFIG_BACKUP_DIR="$(mktemp -d /tmp/gupiao-config.XXXXXX)"
 [[ -f "$ADMIN_DIR/.env" ]] && cp -p "$ADMIN_DIR/.env" "$CONFIG_BACKUP_DIR/admin.env"
 [[ -f "$SERVER_DIR/config.yaml" ]] && cp -p "$SERVER_DIR/config.yaml" "$CONFIG_BACKUP_DIR/server.config.yaml"
 log "已备份服务器生产配置（.env、server/config.yaml）"
+log "认证材料持久化目录：$VERIFICATION_STORAGE_DIR"
 
 update_repo "$ADMIN_DIR" "后台管理前端"
 update_repo "$SERVER_DIR" "Go 后端"

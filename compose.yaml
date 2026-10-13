@@ -21,6 +21,7 @@ services:
     volumes:
       - ./server:/app
       - go_modules:/go/pkg/mod
+      - ${VERIFICATION_STORAGE_DIR:-./server-private/verification}:/app/private/verification
     environment:
       HTTP_SERVICES_POSTGRES_HOST: postgres
       HTTP_SERVICES_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-password}
