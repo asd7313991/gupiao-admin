@@ -13,71 +13,72 @@
           ><ElButton @click="openEditor()">添加持仓</ElButton></template
         ></ArtTableHeader
       >
-      <ElTable v-loading="loading" :data="rows"
-        ><ElTableColumn type="selection" width="42" /><ElTableColumn
-          prop="id"
-          label="ID"
-          width="70" /><ElTableColumn prop="customer_id" label="用户ID" /><ElTableColumn
-          label="证券代码"
-          min-width="145"
-          ><template #default="{ row }"
-            ><b>{{ row.stock_name }}</b
-            ><small class="profit">{{ row.symbol }}</small></template
-          ></ElTableColumn
-        ><ElTableColumn prop="currency" label="币种" /><ElTableColumn
-          label="市值/担保金"
-          min-width="125"
-          ><template #default="{ row }"
-            >{{ money(row.market_value) }}<small>{{ money(row.margin) }}</small></template
-          ></ElTableColumn
-        ><ElTableColumn label="杠杆"
-          ><template #default="{ row }">{{ row.leverage.toFixed(2) }}倍</template></ElTableColumn
-        ><ElTableColumn label="持仓/可用"
-          ><template #default="{ row }"
-            >{{ row.position_qty }}<small>{{ row.available_qty }}</small></template
-          ></ElTableColumn
-        ><ElTableColumn label="现价/成本"
-          ><template #default="{ row }"
-            ><span :class="row.profit_loss >= 0 ? 'profit' : 'loss'">{{
-              row.current_price.toFixed(2)
-            }}</span
-            ><small>{{ row.cost_price.toFixed(2) }}</small></template
-          ></ElTableColumn
-        ><ElTableColumn label="盈亏"
-          ><template #default="{ row }"
-            ><span :class="row.profit_loss >= 0 ? 'profit' : 'loss'">{{
-              money(row.profit_loss)
-            }}</span
-            ><small :class="row.profit_loss >= 0 ? 'profit' : 'loss'"
-              >{{ row.profit_rate.toFixed(2) }}%</small
-            ></template
-          ></ElTableColumn
-        ><ElTableColumn label="状态"
-          ><template #default="{ row }"
-            ><ElTag :type="row.status === 1 ? 'success' : 'danger'">{{
-              row.status === 1 ? '持有' : '已关闭'
-            }}</ElTag></template
-          ></ElTableColumn
-        ><ElTableColumn label="买入日期" min-width="160"
-          ><template #default="{ row }">{{ time(row.buy_at) }}</template></ElTableColumn
-        ><ElTableColumn label="操作" width="150" fixed="right"
-          ><template #default="{ row }"
-            ><div class="action-buttons"
-              ><ElTooltip content="编辑持仓"
-                ><ElButton text class="icon-button" @click="openEditor(row)"
-                  ><ElIcon><EditPen /></ElIcon></ElButton></ElTooltip
-              ><ElTooltip content="按当前价格强平"
-                ><ElButton
-                  text
-                  class="icon-button danger"
-                  :disabled="row.position_qty <= 0 || row.status !== 1"
-                  @click="forceClose(row)"
-                  ><ElIcon><CircleCloseFilled /></ElIcon></ElButton></ElTooltip
-              ><ElTooltip content="删除持仓"
-                ><ElButton text class="icon-button danger" @click="remove(row)"
-                  ><ElIcon
-                    ><Delete /></ElIcon></ElButton></ElTooltip></div></template></ElTableColumn
-      ></ElTable>
+      <div class="table-wrap"
+        ><ElTable v-loading="loading" :data="rows" height="100%"
+          ><ElTableColumn type="selection" width="42" /><ElTableColumn
+            prop="id"
+            label="ID"
+            width="70" /><ElTableColumn prop="customer_id" label="用户ID" /><ElTableColumn
+            label="证券代码"
+            min-width="145"
+            ><template #default="{ row }"
+              ><b>{{ row.stock_name }}</b
+              ><small class="profit">{{ row.symbol }}</small></template
+            ></ElTableColumn
+          ><ElTableColumn prop="currency" label="币种" /><ElTableColumn
+            label="市值/担保金"
+            min-width="125"
+            ><template #default="{ row }"
+              >{{ money(row.market_value) }}<small>{{ money(row.margin) }}</small></template
+            ></ElTableColumn
+          ><ElTableColumn label="杠杆"
+            ><template #default="{ row }">{{ row.leverage.toFixed(2) }}倍</template></ElTableColumn
+          ><ElTableColumn label="持仓/可用"
+            ><template #default="{ row }"
+              >{{ row.position_qty }}<small>{{ row.available_qty }}</small></template
+            ></ElTableColumn
+          ><ElTableColumn label="现价/成本"
+            ><template #default="{ row }"
+              ><span :class="row.profit_loss >= 0 ? 'profit' : 'loss'">{{
+                row.current_price.toFixed(2)
+              }}</span
+              ><small>{{ row.cost_price.toFixed(2) }}</small></template
+            ></ElTableColumn
+          ><ElTableColumn label="盈亏"
+            ><template #default="{ row }"
+              ><span :class="row.profit_loss >= 0 ? 'profit' : 'loss'">{{
+                money(row.profit_loss)
+              }}</span
+              ><small :class="row.profit_loss >= 0 ? 'profit' : 'loss'"
+                >{{ row.profit_rate.toFixed(2) }}%</small
+              ></template
+            ></ElTableColumn
+          ><ElTableColumn label="状态"
+            ><template #default="{ row }"
+              ><ElTag :type="row.status === 1 ? 'success' : 'danger'">{{
+                row.status === 1 ? '持有' : '已关闭'
+              }}</ElTag></template
+            ></ElTableColumn
+          ><ElTableColumn label="买入日期" min-width="160"
+            ><template #default="{ row }">{{ time(row.buy_at) }}</template></ElTableColumn
+          ><ElTableColumn label="操作" width="150" fixed="right"
+            ><template #default="{ row }"
+              ><div class="action-buttons"
+                ><ElTooltip content="编辑持仓"
+                  ><ElButton text class="icon-button" @click="openEditor(row)"
+                    ><ElIcon><EditPen /></ElIcon></ElButton></ElTooltip
+                ><ElTooltip content="按当前价格强平"
+                  ><ElButton
+                    text
+                    class="icon-button danger"
+                    :disabled="row.position_qty <= 0 || row.status !== 1"
+                    @click="forceClose(row)"
+                    ><ElIcon><CircleCloseFilled /></ElIcon></ElButton></ElTooltip
+                ><ElTooltip content="删除持仓"
+                  ><ElButton text class="icon-button danger" @click="remove(row)"
+                    ><ElIcon
+                      ><Delete /></ElIcon></ElButton></ElTooltip></div></template></ElTableColumn></ElTable
+      ></div>
     </ElCard>
     <ElDialog v-model="visible" :title="current?.id ? '编辑持仓' : '添加持仓'" width="680px"
       ><ElForm label-width="105px"
@@ -254,10 +255,24 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    min-height: 0;
   }
 
   .art-table-card {
     flex: 1;
+    min-height: 0;
+  }
+
+  .art-table-card :deep(.el-card__body) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .table-wrap {
+    flex: 1;
+    min-height: 0;
   }
 
   small {
