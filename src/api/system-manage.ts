@@ -108,6 +108,7 @@ export interface Customer {
   bank_address: string
   group_name: string
   balance: number
+  hkd_balance: number
   strategy_balance: number
   frozen_balance: number
   total_profit: number
@@ -506,6 +507,7 @@ export interface StockSecurity {
   change_rate: number
   status: number
   source: string
+  quote_at: number
   updated_at: number
 }
 const stockUrl = '/server-api/private/admin/platform/stock/securities'
@@ -548,6 +550,30 @@ export function syncEastmoneySecurities() {
     url: `${stockUrl}/sync/eastmoney`,
     params: {}
   })
+}
+
+export interface HongKongSyncStatus {
+  state: 'idle' | 'running' | 'success' | 'failed'
+  stage: string
+  pages: number
+  fetched: number
+  quoted: number
+  synced: number
+  tencent: number
+  sina: number
+  unavailable: number
+  error: string
+  started_at: number
+  finished_at: number
+}
+export function syncHongKongSecurities() {
+  return request.post<HongKongSyncStatus>({
+    url: `${stockUrl}/sync/hong-kong`,
+    params: {}
+  })
+}
+export function fetchHongKongSyncStatus() {
+  return request.get<HongKongSyncStatus>({ url: `${stockUrl}/sync/hong-kong` })
 }
 
 export interface FinanceRecharge {

@@ -37,11 +37,11 @@
           label="数量"
         /><ElTableColumn label="成交额"
           ><template #default="{ row }"
-            ><span class="profit">{{ money(row.amount) }}</span></template
+            ><span class="profit">{{ money(row.amount, row.currency) }}</span></template
           ></ElTableColumn
         ><ElTableColumn prop="stamp_duty" label="印花税" /><ElTableColumn
           prop="transfer_fee"
-          label="过户费"
+          label="其他交易费"
         /><ElTableColumn prop="commission" label="佣金" /><ElTableColumn
           prop="remark"
           label="备注"
@@ -170,7 +170,8 @@
     page.value = 1
     load()
   }
-  const money = (v: number) => `¥${v.toFixed(2)}`,
+  const money = (v: number, currency = 'CNY') =>
+      `${currency === 'HKD' ? 'HK$' : '¥'}${v.toFixed(2)}`,
     time = (v: number) => new Date(v * 1000).toLocaleString('zh-CN', { hour12: false })
   const empty = () => ({
     customer_id: 1,

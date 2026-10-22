@@ -29,7 +29,8 @@
             label="市值/担保金"
             min-width="125"
             ><template #default="{ row }"
-              >{{ money(row.market_value) }}<small>{{ money(row.margin) }}</small></template
+              >{{ money(row.market_value, row.currency)
+              }}<small>{{ money(row.margin, row.currency) }}</small></template
             ></ElTableColumn
           ><ElTableColumn label="杠杆"
             ><template #default="{ row }">{{ row.leverage.toFixed(2) }}倍</template></ElTableColumn
@@ -40,14 +41,14 @@
           ><ElTableColumn label="现价/成本"
             ><template #default="{ row }"
               ><span :class="row.profit_loss >= 0 ? 'profit' : 'loss'">{{
-                row.current_price.toFixed(2)
+                row.current_price.toFixed(row.currency === 'HKD' ? 3 : 2)
               }}</span
-              ><small>{{ row.cost_price.toFixed(2) }}</small></template
+              ><small>{{ row.cost_price.toFixed(row.currency === 'HKD' ? 3 : 2) }}</small></template
             ></ElTableColumn
           ><ElTableColumn label="盈亏"
             ><template #default="{ row }"
               ><span :class="row.profit_loss >= 0 ? 'profit' : 'loss'">{{
-                money(row.profit_loss)
+                money(row.profit_loss, row.currency)
               }}</span
               ><small :class="row.profit_loss >= 0 ? 'profit' : 'loss'"
                 >{{ row.profit_rate.toFixed(2) }}%</small
@@ -65,7 +66,11 @@
             ><template #default="{ row }"
               ><div class="action-buttons"
                 ><ElTooltip content="编辑持仓"
-                  ><ElButton text class="icon-button" @click="openEditor(row)"
+                  ><ElButton
+                    text
+                    class="icon-button"
+                    :disabled="row.currency === 'HKD'"
+                    @click="openEditor(row)"
                     ><ElIcon><EditPen /></ElIcon></ElButton></ElTooltip
                 ><ElTooltip content="按当前价格强平"
                   ><ElButton
@@ -75,7 +80,11 @@
                     @click="forceClose(row)"
                     ><ElIcon><CircleCloseFilled /></ElIcon></ElButton></ElTooltip
                 ><ElTooltip content="删除持仓"
-                  ><ElButton text class="icon-button danger" @click="remove(row)"
+                  ><ElButton
+                    text
+                    class="icon-button danger"
+                    :disabled="row.currency === 'HKD'"
+                    @click="remove(row)"
                     ><ElIcon
                       ><Delete /></ElIcon></ElButton></ElTooltip></div></template></ElTableColumn></ElTable
       ></div>
@@ -184,7 +193,8 @@
     Object.assign(filters, { phone: '', symbol: '', stock_name: '' })
     load()
   }
-  const money = (v: number) => `¥${v.toFixed(2)}`,
+  const money = (v: number, currency = 'CNY') =>
+      `${currency === 'HKD' ? 'HK$' : '¥'}${v.toFixed(2)}`,
     time = (v: number) => new Date(v * 1000).toLocaleString('zh-CN', { hour12: false })
   const empty = () => ({
     phone: '',

@@ -167,6 +167,7 @@
     marginCallRate: 0.01
   }
   const defaultHKTrade = {
+    enabled: false,
     commission: 0.00025,
     minCommission: 15,
     stampDuty: 0.001,
@@ -211,9 +212,10 @@
     ['nonTradingFee', '非交易日收费', 'boolean']
   ])
   const hkTradeFields = fields([
+    ['enabled', '启用港币全额市价模拟交易', 'boolean'],
     ['commission', '佣金费率（买卖双向）', 'number'],
     ['minCommission', '最低佣金（每笔）', 'number'],
-    ['stampDuty', '印花税费率（仅卖出）', 'number'],
+    ['stampDuty', '印花税费率（买卖双向）', 'number'],
     ['regulatoryFee', '证监会征费率（买卖双向）', 'number'],
     ['tradingFee', '交易费率（买卖双向）', 'number'],
     ['settlementFee', '系统交收费率（买卖双向）', 'number']
@@ -254,7 +256,7 @@
   ])
   const linkFields = fields([
     ['customerService', '在线客服链接', 'text'],
-    ['hkdRate', '港币汇率', 'number'],
+    ['hkdRate', '港币汇率（1港元兑人民币）', 'number'],
     ['aQuote', 'A股行情链接', 'text'],
     ['hkQuote', '港股行情链接', 'text'],
     ['telegramToken', 'Telegram 密钥', 'text'],

@@ -23,7 +23,7 @@
             ><small>{{ row.phone }}</small></template
           ></ElTableColumn
         >
-        <ElTableColumn label="总资产" width="110"
+        <ElTableColumn label="人民币资产" width="110"
           ><template #default="{ row }">{{
             money(row.balance + row.frozen_balance)
           }}</template></ElTableColumn
@@ -35,8 +35,8 @@
           ></ElTableColumn
         >
         <ElTableColumn label="港币账户" min-width="120"
-          ><template #default
-            ><b class="money">可用 ¥0.00</b><small>冻结 ¥0.00</small></template
+          ><template #default="{ row }"
+            ><b class="money">可用 HK$ {{ Number(row.hkd_balance).toFixed(2) }}</b></template
           ></ElTableColumn
         >
         <ElTableColumn prop="id_card" label="身份证号码" min-width="150" /><ElTableColumn
@@ -170,8 +170,10 @@
         ><ElDescriptionsItem label="手机号">{{ detail.phone }}</ElDescriptionsItem
         ><ElDescriptionsItem label="姓名">{{ detail.name }}</ElDescriptionsItem
         ><ElDescriptionsItem label="身份证号">{{ detail.id_card }}</ElDescriptionsItem
-        ><ElDescriptionsItem label="余额"
+        ><ElDescriptionsItem label="人民币余额"
           ><b class="money">{{ money(detail.balance) }}</b></ElDescriptionsItem
+        ><ElDescriptionsItem label="港币余额"
+          ><b class="money">HK$ {{ Number(detail.hkd_balance).toFixed(2) }}</b></ElDescriptionsItem
         ><ElDescriptionsItem label="冻结金额"
           ><b class="loss">{{ money(detail.frozen_balance) }}</b></ElDescriptionsItem
         ><ElDescriptionsItem label="银行名称">{{ detail.bank_name || '未填写' }}</ElDescriptionsItem
@@ -223,7 +225,13 @@
         ><ElFormItem label="手机号"
           ><ElInput :model-value="depositing?.phone" disabled /></ElFormItem
         ><ElFormItem label="当前余额"
-          ><ElInput :model-value="money(depositing?.balance || 0)" disabled /></ElFormItem
+          ><ElInput
+            :model-value="
+              deposit.currency === 'HKD'
+                ? `HK$ ${Number(depositing?.hkd_balance || 0).toFixed(2)}`
+                : money(depositing?.balance || 0)
+            "
+            disabled /></ElFormItem
         ><ElFormItem label="入账币种"
           ><ElRadioGroup v-model="deposit.currency"
             ><ElRadio value="CNY">人民币 (CNY)</ElRadio
