@@ -545,6 +545,12 @@ export function deleteStockSecurity(id: number) {
 export function updateStockSecurityStatus(id: number, status: number) {
   return request.put<void>({ url: `${stockUrl}/status`, params: { id, status } })
 }
+export function enableHongKongSecurities() {
+  return request.post<{ updated: number }>({
+    url: `${stockUrl}/enable/hong-kong`,
+    params: {}
+  })
+}
 export function syncEastmoneySecurities() {
   return request.post<{ synced: number; source: string }>({
     url: `${stockUrl}/sync/eastmoney`,

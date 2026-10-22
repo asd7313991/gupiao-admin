@@ -68,11 +68,14 @@
       ><ElAlert
         v-if="setting.trade.allDay"
         class="trade-test-alert"
-        title="全天交易测试模式已开启"
-        description="市价买卖和限价挂单撮合将忽略交易日与交易时段限制，仅用于测试，完成后请立即关闭。"
+        title="A股、港股全时间段模拟交易已开启"
+        description="两个市场的市价买卖与限价撮合均忽略交易日及时段限制，不代表实盘。港股仍拒绝超过30分钟的报价，限价仍需有效买卖盘口与正挂量；开启后不保证收市旧报价能成交。仅用于测试，完成后请关闭。"
         type="warning"
         show-icon
-        :closable="false" /><ElTabs class="market-tabs"
+        :closable="false" /><SettingsBlock
+        :editing="editing"
+        :data="setting.trade"
+        :fields="allDayFields" /><ElTabs class="market-tabs"
         ><ElTabPane label="A股"
           ><SettingsBlock
             :editing="editing"
@@ -198,6 +201,7 @@
   })
   const fields = (data: [string, string, any][]) =>
     data.map(([key, label, type]) => ({ key, label, type }))
+  const allDayFields = fields([['allDay', '全时间段模拟交易（A股＋港股，含限价撮合）', 'boolean']])
   const tradeFields = fields([
     ['buyCommission', '买入佣金费率', 'number'],
     ['sellCommission', '卖出佣金费率', 'number'],
@@ -208,7 +212,6 @@
     ['morningEnd', '早上结束时间', 'time'],
     ['afternoonStart', '下午开始时间', 'time'],
     ['afternoonEnd', '下午结束时间', 'time'],
-    ['allDay', '测试模式：强制开启全天交易', 'boolean'],
     ['nonTradingFee', '非交易日收费', 'boolean']
   ])
   const hkTradeFields = fields([

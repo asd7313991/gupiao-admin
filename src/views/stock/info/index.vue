@@ -9,7 +9,7 @@
       @reset="reset"
     />
     <ElAlert
-      title="港股支持采集核对和行情查询；启用的港币普通股可通过独立模拟交易入口买卖。公开行情可能延迟，刷新不会改变上游报价时间；金额以证券计价币种为准，报价时间以香港时间显示。"
+      title="同步新增港股默认启用，已有证券保留人工启停状态；可用「一键启用港股」开启全部现有港股。港股交易仍需总开关开启、有效报价及符合币种/整手规则；报价时间以香港时间显示。"
       type="warning"
       :closable="false"
       show-icon
@@ -36,6 +36,8 @@
           ><ElButton type="warning" :loading="syncing" @click="sync">同步东方财富</ElButton
           ><ElButton type="primary" :loading="hkSyncing" @click="syncHK"
             >同步港股（新浪＋腾讯）</ElButton
+          ><ElButton type="success" :loading="hkEnabling" :disabled="hkSyncing" @click="enableAllHK"
+            >一键启用港股</ElButton
           ><ElButton @click="openEditor()">添加股票</ElButton></template
         ></ArtTableHeader
       >
@@ -165,6 +167,7 @@
     syncHongKongSecurities,
     fetchHongKongSyncStatus,
     updateStockSecurityStatus,
+    enableHongKongSecurities,
     type StockSecurity,
     type HongKongSyncStatus
   } from '@/api/system-manage'
@@ -319,6 +322,34 @@
     await updateStockSecurityStatus(row.id, row.status === 1 ? 2 : 1)
     ElMessage.success('证券状态已更新')
     load()
+  }
+  const hkEnabling = ref(false)
+  const enableAllHK = async () => {
+    if (hkEnabling.value) return
+    const confirmed = await ElMessageBox.confirm(
+      '将启用当前数据库中全部未删除的港股，包含其他分页及筛选外的港股及手动停用记录；不影响A股。交易总开关、报价时效、币种及整手规则保持不变。确定继续吗？',
+      '一键启用港股',
+      { type: 'warning', confirmButtonText: '确认全部启用', cancelButtonText: '取消' }
+    ).then(
+      () => true,
+      (action: unknown) => {
+        if (action === 'cancel' || action === 'close') return false
+        throw action
+      }
+    )
+    if (!confirmed || hkEnabling.value) return
+    hkEnabling.value = true
+    try {
+      const result = await enableHongKongSecurities()
+      ElMessage.success(
+        result.updated > 0
+          ? `已启用 ${result.updated} 条港股证券`
+          : '没有需要启用的港股，请确认已完成采集或证券均已启用'
+      )
+      await load()
+    } finally {
+      hkEnabling.value = false
+    }
   }
   const remove = async (row: StockSecurity) => {
     await ElMessageBox.confirm(`确定删除证券「${row.name}」吗？`, '删除证券', { type: 'warning' })
