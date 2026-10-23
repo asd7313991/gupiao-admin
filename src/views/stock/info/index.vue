@@ -30,6 +30,22 @@
       :closable="false"
       show-icon
     />
+    <ElAlert
+      v-if="priorityPollError"
+      title="无法读取重点行情同步状态，请检查后端版本、网络及任务运行情况；不能据此判断行情已恢复。"
+      type="error"
+      :closable="false"
+      show-icon
+    />
+    <ElAlert
+      v-for="status in priorityStatuses"
+      :key="status.market"
+      :title="priorityTitle(status)"
+      :description="priorityDescription(status)"
+      :type="priorityAlertType(status)"
+      :closable="false"
+      show-icon
+    />
     <ElCard class="art-table-card"
       ><ArtTableHeader :loading="loading" @refresh="load"
         ><template #left
@@ -156,7 +172,7 @@
 </template>
 <script setup lang="ts">
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { onBeforeUnmount } from 'vue'
+  import { onActivated, onBeforeUnmount, onDeactivated } from 'vue'
   import {
     deleteStockSecurity,
     fetchStockBoards,
@@ -166,10 +182,12 @@
     syncEastmoneySecurities,
     syncHongKongSecurities,
     fetchHongKongSyncStatus,
+    fetchPriorityQuoteStatus,
     updateStockSecurityStatus,
     enableHongKongSecurities,
     type StockSecurity,
-    type HongKongSyncStatus
+    type HongKongSyncStatus,
+    type PriorityQuoteStatus
   } from '@/api/system-manage'
   defineOptions({ name: 'StockInfo' })
   const loading = ref(false),
@@ -371,6 +389,64 @@
     }
   }
   const hkStatus = ref<HongKongSyncStatus | null>(null)
+  const priorityStatuses = ref<PriorityQuoteStatus[]>([])
+  const priorityPollError = ref(false)
+  const priorityLabels: Record<PriorityQuoteStatus['state'], string> = {
+    waiting: '等待首次检查',
+    running: '正在检查',
+    success: '本轮检查完成',
+    degraded: '行情延迟、部分缺失或已使用备用源',
+    failed: '同步失败，正在退避重试',
+    disabled: '自动同步已关闭',
+    stalled: '任务长时间未更新'
+  }
+  const priorityTitle = (status: PriorityQuoteStatus) =>
+    `${status.market === 'HK' ? '港股' : 'A股'}重点行情：${priorityLabels[status.state]}`
+  const priorityAlertType = (
+    status: PriorityQuoteStatus
+  ): 'error' | 'warning' | 'success' | 'info' =>
+    status.state === 'failed' || status.state === 'stalled'
+      ? 'error'
+      : status.state === 'degraded' || status.state === 'disabled'
+        ? 'warning'
+        : status.state === 'success'
+          ? 'success'
+          : 'info'
+  const priorityDescription = (status: PriorityQuoteStatus) =>
+    [
+      '持仓、自选及最近2分钟查看/交易的股票；目标盘中约5秒、盘外60秒检查，每轮最多100只，超量轮转，网络耗时及失败退避会延长间隔。',
+      `重点${status.targets}只，本轮检查${status.checked}只、有效${status.updated}只、缺失/过期${status.unavailable}只、延迟超过3分钟${status.delayed}只、轮候${status.deferred}只。东方财富${status.eastmoney}只、腾讯${status.tencent}只。`,
+      `最近请求：${quoteTime(status.last_attempt)}；最近完成：${quoteTime(status.last_success)}；下次计划：${quoteTime(status.next_attempt)}。请求成功不代表每只股票都有新成交，原始报价时间不会被改写。`,
+      status.error,
+      ...status.source_errors,
+      status.symbols.length ? `无有效报价：${status.symbols.join('、')}` : ''
+    ]
+      .filter(Boolean)
+      .join(' ')
+  let priorityTimer: ReturnType<typeof setTimeout> | undefined
+  let priorityPolling = false
+  let priorityPaused = false
+  const refreshPriorityStatus = async () => {
+    if (priorityTimer) clearTimeout(priorityTimer)
+    if (disposed || priorityPaused || priorityPolling) return
+    priorityPolling = true
+    try {
+      const statuses = await fetchPriorityQuoteStatus()
+      if (disposed || priorityPaused) return
+      priorityStatuses.value = statuses
+      priorityPollError.value = false
+    } catch (error) {
+      if (!disposed && !priorityPaused) {
+        priorityPollError.value = true
+        priorityStatuses.value = []
+        console.error('读取重点行情同步状态失败', error)
+      }
+    } finally {
+      priorityPolling = false
+      if (!disposed && !priorityPaused)
+        priorityTimer = setTimeout(() => void refreshPriorityStatus(), 5000)
+    }
+  }
   const hkStarting = ref(false)
   const hkPollError = ref(false)
   const hkSyncing = computed(() => hkStarting.value || hkStatus.value?.state === 'running')
@@ -427,6 +503,7 @@
     }
   }
   onMounted(async () => {
+    void refreshPriorityStatus()
     await loadExchanges()
     await load()
     await refreshHKStatus()
@@ -434,6 +511,15 @@
   onBeforeUnmount(() => {
     disposed = true
     if (hkTimer) clearTimeout(hkTimer)
+    if (priorityTimer) clearTimeout(priorityTimer)
+  })
+  onActivated(() => {
+    priorityPaused = false
+    void refreshPriorityStatus()
+  })
+  onDeactivated(() => {
+    priorityPaused = true
+    if (priorityTimer) clearTimeout(priorityTimer)
   })
 </script>
 <style scoped>

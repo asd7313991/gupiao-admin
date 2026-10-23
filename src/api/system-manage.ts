@@ -583,6 +583,33 @@ export function fetchHongKongSyncStatus() {
   return request.get<HongKongSyncStatus>({ url: `${stockUrl}/sync/hong-kong` })
 }
 
+export interface PriorityQuoteStatus {
+  market: 'A' | 'HK'
+  state: 'waiting' | 'running' | 'success' | 'degraded' | 'failed' | 'disabled' | 'stalled'
+  last_attempt: number
+  last_success: number
+  next_attempt: number
+  targets: number
+  checked: number
+  updated: number
+  unavailable: number
+  delayed: number
+  deferred: number
+  eastmoney: number
+  tencent: number
+  consecutive_failures: number
+  error: string
+  source_errors: string[]
+  symbols: string[]
+}
+
+export function fetchPriorityQuoteStatus() {
+  return request.get<PriorityQuoteStatus[]>({
+    url: `${stockUrl}/sync/priority`,
+    showErrorMessage: false
+  })
+}
+
 export interface FinanceRecharge {
   id: number
   customer_id: number
