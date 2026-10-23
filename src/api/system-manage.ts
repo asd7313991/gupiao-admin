@@ -566,6 +566,7 @@ export interface HongKongSyncStatus {
   quoted: number
   synced: number
   tencent: number
+  eastmoney: number
   sina: number
   unavailable: number
   error: string

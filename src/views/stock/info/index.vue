@@ -379,7 +379,7 @@
     if (!status) return ''
     if (status.state === 'failed') return `${status.stage}：${status.error}`
     if (status.state === 'success')
-      return `港股采集完成：保存 ${status.synced} 条；腾讯报价 ${status.tencent} 条，新浪报价 ${status.sina} 条，无有效报价 ${status.unavailable} 条。`
+      return `港股采集完成：保存 ${status.synced} 条；东方财富报价 ${status.eastmoney ?? 0} 条，腾讯报价 ${status.tencent} 条，新浪报价 ${status.sina} 条，无有效报价 ${status.unavailable} 条。`
     return `${status.stage}；已获取 ${status.pages} 页、${status.fetched} 条证券，已核对 ${status.quoted} 条报价。`
   })
   const quoteTime = (value: number) =>
