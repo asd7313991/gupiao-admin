@@ -113,7 +113,7 @@
             mark="◷"
             color="blue"
             title="证券行情同步"
-            desc="交易时段与非交易时段自动同步公开行情数据" /></template
+            desc="A股与已收录港股共用同步开关和间隔，分别按各自交易时段更新；港股新增列表仍需手动同步" /></template
         ><SettingsBlock
           :editing="editing"
           :data="setting.stockSync"
