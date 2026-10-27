@@ -119,6 +119,8 @@ export interface Customer {
   id_card_front?: string
   id_card_back?: string
   verification_video?: string
+  verification_face?: string
+  verification_face_at?: number
   verification_remark?: string
   remark?: string
   created_at: string

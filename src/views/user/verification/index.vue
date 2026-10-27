@@ -54,7 +54,19 @@
             /><span v-else>未上传</span></template
           ></ElTableColumn
         >
-        <ElTableColumn label="认证视频" width="100"
+        <ElTableColumn label="正脸照片" width="130"
+          ><template #default="{ row }"
+            ><ElImage
+              v-if="row.verification_face"
+              :src="row.verification_face"
+              fit="contain"
+              class="credential"
+              @click="view(row)"
+            />
+            <span v-else>未采集</span></template
+          ></ElTableColumn
+        >
+        <ElTableColumn label="历史认证视频" width="120"
           ><template #default="{ row }"
             ><ElButton v-if="row.verification_video" link type="primary" @click="view(row)"
               >查看视频</ElButton
@@ -99,7 +111,13 @@
     </ElCard>
 
     <ElDialog v-model="detailVisible" title="实名认证详情" width="720px"
-      ><ElDescriptions v-if="detail" :column="2" border
+      ><ElAlert
+        title="本地检测仅辅助采集，不代表活体或人证比对通过。请人工对照身份证、姓名号码和正脸照片；历史视频只作补充材料。"
+        type="warning"
+        :closable="false"
+        show-icon
+      />
+      <ElDescriptions v-if="detail" :column="2" border
         ><ElDescriptionsItem label="用户ID">{{ detail.id }}</ElDescriptionsItem
         ><ElDescriptionsItem label="手机号">{{ detail.phone }}</ElDescriptionsItem
         ><ElDescriptionsItem label="姓名">{{ detail.name }}</ElDescriptionsItem
@@ -127,7 +145,18 @@
             :src="detail.id_card_back"
             class="large-image"
           /><span v-else>未上传</span></ElDescriptionsItem
-        ><ElDescriptionsItem label="认证视频" :span="2"
+        ><ElDescriptionsItem label="正脸照片" :span="2"
+          ><ElImage
+            v-if="detail.verification_face"
+            :src="detail.verification_face"
+            class="large-image face-image"
+            fit="contain"
+          />
+          <span v-else>未采集；新提交或重新审核前请客户补拍</span>
+          <p v-if="detail.verification_face_at"
+            >照片接收时间：{{ new Date(detail.verification_face_at * 1000).toLocaleString() }}</p
+          > </ElDescriptionsItem
+        ><ElDescriptionsItem label="历史认证视频（可选）" :span="2"
           ><video
             v-if="detailVideoURL"
             :src="detailVideoURL"
@@ -146,7 +175,13 @@
       v-model="reviewVisible"
       :title="reviewState === 1 ? '人工审核通过' : '驳回实名认证'"
       width="460px"
-      ><ElForm label-width="90px"
+      ><ElAlert
+        v-if="reviewState === 1"
+        title="请先人工核对身份证正反面、姓名号码及正脸照片。检测到人脸不等于认证通过。"
+        type="warning"
+        :closable="false"
+      />
+      <ElForm label-width="90px"
         ><ElFormItem label="审核结果"
           ><ElTag :type="reviewState === 1 ? 'success' : 'danger'">{{
             reviewState === 1 ? '通过' : '驳回'
@@ -268,9 +303,13 @@
   }
   const batchReview = async () => {
     const ids = selected.value.map((item) => item.id)
-    await ElMessageBox.confirm(`确定批量通过 ${ids.length} 位客户的实名认证吗？`, '批量审核', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      `请确认已逐人对照身份证、姓名号码和正脸照片。确定人工批量通过 ${ids.length} 位客户吗？本地检测不是活体或人证核验。`,
+      '批量审核',
+      {
+        type: 'warning'
+      }
+    )
     await batchReviewCustomerVerification(ids)
     ElMessage.success('批量审核已完成')
     load()
@@ -323,6 +362,11 @@
     display: block;
     width: 100%;
     max-height: 360px;
+  }
+
+  .face-image {
+    height: 280px;
+    object-fit: contain;
   }
 
   .more {
