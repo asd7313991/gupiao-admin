@@ -23,7 +23,10 @@
             min-width="145"
             ><template #default="{ row }"
               ><b>{{ row.stock_name }}</b
-              ><small class="profit">{{ row.symbol }}</small></template
+              ><small class="profit">{{ row.symbol }}</small
+              ><small v-if="row.currency !== 'HKD'">{{
+                row.quantity_basis === 1 ? '实际股数 / 股票收益率' : '旧口径 / 杠杆收益率'
+              }}</small></template
             ></ElTableColumn
           ><ElTableColumn prop="currency" label="币种" /><ElTableColumn
             label="市值/担保金"

@@ -294,6 +294,7 @@ export function resetAdministratorGoogleAuthSecret(id: number) {
 }
 
 export interface TradePosition {
+  quantity_basis?: number
   id: number
   customer_id: number
   symbol: string
