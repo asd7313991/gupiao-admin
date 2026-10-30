@@ -39,7 +39,7 @@ export default ({ mode }: { mode: string }) => {
           changeOrigin: true
         },
         '/server-api': {
-          target: 'http://localhost:8080',
+          target: VITE_API_PROXY_URL || 'http://localhost:8080',
           changeOrigin: true,
           rewrite: (requestPath) => requestPath.replace(/^\/server-api/, '/api/v1'),
           headers: {

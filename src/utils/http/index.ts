@@ -83,10 +83,11 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
-    const { code, msg } = response.data
+    const { code, message, msg } = response.data
+    const responseMessage = message || msg
     if (code === ApiStatus.success) return response
-    if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
-    throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
+    if (code === ApiStatus.unauthorized) handleUnauthorizedError(responseMessage)
+    throw createHttpError(responseMessage || $t('httpMsg.requestFailed'), code)
   },
   (error) => {
     if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
@@ -178,8 +179,9 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 
     // 显示成功消息
-    if (config.showSuccessMessage && res.data.msg) {
-      showSuccess(res.data.msg)
+    const responseMessage = res.data.message || res.data.msg
+    if (config.showSuccessMessage && responseMessage) {
+      showSuccess(responseMessage)
     }
 
     return res.data.data as T
