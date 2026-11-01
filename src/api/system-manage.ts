@@ -470,11 +470,17 @@ export interface AppArticle {
   title: string
   type: string
   content: string
+  footer_images?: string[]
   status: number
   created_at: string
   updated_at: string
 }
 const articleUrl = '/server-api/private/admin/platform/setting/articles'
+export function uploadAppArticleImage(file: File) {
+  const data = new FormData()
+  data.append('file', file)
+  return request.post<{ url: string }>({ url: `${articleUrl}/image`, data })
+}
 export function fetchAppArticles(params: {
   page: number
   pageSize: number

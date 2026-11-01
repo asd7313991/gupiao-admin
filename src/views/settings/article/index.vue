@@ -65,9 +65,12 @@
     <ElDialog
       v-model="visible"
       :title="current?.id ? '编辑文章' : '添加文章'"
-      width="900px"
+      width="min(900px, calc(100% - 24px))"
       top="6vh"
       destroy-on-close
+      :close-on-click-modal="!uploading && !saving"
+      :close-on-press-escape="!uploading && !saving"
+      :show-close="!uploading && !saving"
       ><ElForm label-width="90px"
         ><ElFormItem label="文章标题" required
           ><ElInput v-model="form.title" placeholder="请输入文章标题" /></ElFormItem
@@ -76,6 +79,7 @@
             v-model="form.type"
             filterable
             allow-create
+            :disabled="uploading || saving"
             placeholder="请输入或选择文章类型"
             style="width: 100%"
             ><ElOption
@@ -89,14 +93,60 @@
             height="360px"
             mode="simple"
             placeholder="请输入文章内容" /></ElFormItem
+        ><ElFormItem v-if="form.type === '法律声明' || form.footer_images.length" label="底部照片"
+          ><div class="article-photos"
+            ><input
+              ref="photoInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              hidden
+              @change="uploadPhotos"
+            /><ElButton
+              :loading="uploading"
+              :disabled="saving || form.type !== '法律声明'"
+              @click="photoInput?.click()"
+              >上传照片</ElButton
+            ><p class="photo-tip"
+              >支持多张 JPEG、PNG 或
+              WebP，每张不超过5MB。按下面的顺序显示在法律声明正文最下面，点击“确定”后生效。照片将公开展示，请仅上传已获授权、可公开的资料。</p
+            ><div v-for="(url, index) in form.footer_images" :key="url" class="photo-item"
+              ><ElImage
+                :src="url"
+                :preview-src-list="form.footer_images"
+                :initial-index="index"
+                fit="contain"
+                ><template #error><span>照片加载失败，请重新上传</span></template></ElImage
+              ><div class="photo-actions"
+                ><span>第{{ index + 1 }}张</span
+                ><ElButton
+                  :disabled="uploading || saving || index === 0"
+                  @click="movePhoto(index, -1)"
+                  >上移</ElButton
+                ><ElButton
+                  :disabled="uploading || saving || index === form.footer_images.length - 1"
+                  @click="movePhoto(index, 1)"
+                  >下移</ElButton
+                ><ElButton
+                  type="danger"
+                  plain
+                  :disabled="uploading || saving"
+                  @click="form.footer_images.splice(index, 1)"
+                  >删除</ElButton
+                ></div
+              ></div
+            ></div
+          ></ElFormItem
         ><ElFormItem label="状态"
           ><ElSwitch
             v-model="enabled"
             active-text="启用"
             inactive-text="停用" /></ElFormItem></ElForm
       ><template #footer
-        ><ElButton @click="visible = false">取消</ElButton
-        ><ElButton type="primary" @click="save">确定</ElButton></template
+        ><ElButton :disabled="uploading || saving" @click="visible = false">取消</ElButton
+        ><ElButton type="primary" :loading="saving" :disabled="uploading" @click="save"
+          >确定</ElButton
+        ></template
       ></ElDialog
     >
   </div>
@@ -107,6 +157,7 @@
     deleteAppArticle,
     fetchAppArticles,
     saveAppArticle,
+    uploadAppArticleImage,
     updateAppArticleStatus,
     type AppArticle
   } from '@/api/system-manage'
@@ -185,30 +236,77 @@
   const visible = ref(false),
     current = ref<AppArticle | null>(null),
     enabled = ref(true),
-    form = reactive({ title: '', type: '', content: '' })
+    form = reactive({ title: '', type: '', content: '', footer_images: [] as string[] }),
+    uploading = ref(false),
+    saving = ref(false),
+    photoInput = ref<HTMLInputElement>()
   const openEditor = (row?: AppArticle) => {
     current.value = row || null
     Object.assign(form, {
       title: row?.title || '',
       type: row?.type || '',
-      content: row?.content || ''
+      content: row?.content || '',
+      footer_images: [...(row?.footer_images || [])]
     })
     enabled.value = (row?.status ?? 1) === 1
     visible.value = true
   }
+  const uploadPhotos = async (event: Event) => {
+    const input = event.target
+    if (!(input instanceof HTMLInputElement) || !input.files?.length) return
+    const files = Array.from(input.files)
+    if (
+      files.some(
+        (file) =>
+          !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+          file.size <= 0 ||
+          file.size > 5 * 1024 * 1024
+      )
+    ) {
+      input.value = ''
+      ElMessage.warning('请选择 JPEG、PNG 或 WebP 照片，每张不超过5MB')
+      return
+    }
+    uploading.value = true
+    try {
+      for (const file of files) {
+        const result = await uploadAppArticleImage(file)
+        form.footer_images.push(result.url)
+      }
+      ElMessage.success('照片上传成功，请点击确定保存文章')
+    } finally {
+      input.value = ''
+      uploading.value = false
+    }
+  }
+  const movePhoto = (index: number, direction: number) => {
+    const target = index + direction
+    if (target < 0 || target >= form.footer_images.length) return
+    const [url] = form.footer_images.splice(index, 1)
+    form.footer_images.splice(target, 0, url)
+  }
   const save = async () => {
+    if (uploading.value || saving.value) return
     if (!form.title.trim() || !form.type.trim() || !plainText(form.content))
       return ElMessage.warning('请填写文章标题、类型和内容')
-    await saveAppArticle({
-      id: current.value?.id,
-      title: form.title.trim(),
-      type: form.type.trim(),
-      content: form.content,
-      status: enabled.value ? 1 : 2
-    })
-    ElMessage.success('文章已保存')
-    visible.value = false
-    load()
+    if (form.type.trim() !== '法律声明' && form.footer_images.length)
+      return ElMessage.warning('底部照片仅用于法律声明，修改类型前请删除照片')
+    saving.value = true
+    try {
+      await saveAppArticle({
+        id: current.value?.id,
+        title: form.title.trim(),
+        type: form.type.trim(),
+        content: form.content,
+        footer_images: [...form.footer_images],
+        status: enabled.value ? 1 : 2
+      })
+      ElMessage.success('文章已保存')
+      visible.value = false
+      await load()
+    } finally {
+      saving.value = false
+    }
   }
   const toggleStatus = async (row: AppArticle) => {
     await updateAppArticleStatus(row.id, row.status === 1 ? 2 : 1)
@@ -252,5 +350,40 @@
 
   .danger {
     color: var(--el-color-danger);
+  }
+
+  .article-photos {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .photo-tip {
+    margin: 12px 0;
+    line-height: 1.6;
+    color: var(--el-text-color-secondary);
+  }
+
+  .photo-item {
+    padding: 12px;
+    margin-top: 16px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 6px;
+  }
+
+  .photo-item .el-image {
+    width: 100%;
+    height: 160px;
+  }
+
+  .photo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  .photo-actions .el-button {
+    margin-left: 0;
   }
 </style>

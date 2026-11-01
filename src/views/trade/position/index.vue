@@ -92,7 +92,10 @@
                       ><Delete /></ElIcon></ElButton></ElTooltip></div></template></ElTableColumn></ElTable
       ></div>
     </ElCard>
-    <ElDialog v-model="visible" :title="current?.id ? '编辑持仓' : '添加持仓'" width="680px"
+    <ElDialog
+      v-model="visible"
+      :title="current?.id ? '编辑持仓' : '添加持仓'"
+      width="min(680px, calc(100% - 24px))"
       ><ElForm label-width="105px"
         ><ElFormItem label="手机号" required v-if="!current"
           ><ElInput v-model="form.phone" placeholder="请输入手机号" /></ElFormItem
@@ -104,14 +107,14 @@
         ><ElFormItem label="股票名称" v-if="current"
           ><ElInput v-model="form.stock_name" :disabled="!!current" /></ElFormItem
         ><ElRow :gutter="16"
-          ><ElCol :span="12"
+          ><ElCol :xs="24" :sm="12"
             ><ElFormItem label="持仓均价" required
               ><ElInputNumber
                 v-model="form.cost_price"
                 :min="0"
                 :precision="4"
                 :step="0.01" /></ElFormItem></ElCol
-          ><ElCol :span="12"
+          ><ElCol :xs="24" :sm="12"
             ><ElFormItem label="持仓数量" required
               ><ElInputNumber
                 v-model="form.position_qty"
@@ -125,13 +128,13 @@
             placeholder="选择创建时间（可选）"
             style="width: 100%" /></ElFormItem
         ><ElRow :gutter="16" v-if="current"
-          ><ElCol :span="12"
+          ><ElCol :xs="24" :sm="12"
             ><ElFormItem label="可用数量"
               ><ElInputNumber
                 v-model="form.available_qty"
                 :min="0"
                 :precision="0" /></ElFormItem></ElCol
-          ><ElCol :span="12"
+          ><ElCol :xs="24" :sm="12"
             ><ElFormItem label="杠杆倍数"
               ><ElInputNumber
                 v-model="form.leverage"
