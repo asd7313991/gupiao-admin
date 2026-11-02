@@ -120,6 +120,10 @@
                 v-model="form.position_qty"
                 :min="0"
                 :precision="0" /></ElFormItem></ElCol></ElRow
+        ><ElFormItem v-if="!current" label="新增规则"
+          ><p class="tip"
+            >A股新增持仓按5倍杠杆：数量为实际股数，本金＝股数×每股成本÷5；市值和股票盈亏不再乘5。后台手工创建不自动扣客户余额。</p
+          ></ElFormItem
         ><ElFormItem label="创建时间" v-if="!current"
           ><ElDatePicker
             v-model="form.buy_at"
@@ -212,7 +216,7 @@
     available_qty: 0,
     current_price: 0,
     cost_price: 0,
-    leverage: 1,
+    leverage: 5,
     buy_at: 0,
     record_change: false
   })
