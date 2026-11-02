@@ -308,6 +308,8 @@ export interface TradePosition {
   cost_price: number
   total_cost: number
   margin: number
+  base_margin?: number
+  supplemental_margin?: number
   leverage: number
   market_value: number
   profit_loss: number

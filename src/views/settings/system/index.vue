@@ -94,7 +94,7 @@
             mark="▣"
             color="green"
             title="杠杆和风控"
-            desc="资金杠杆与强制平仓阈值" /></template
+            desc="A股、港股新建持仓固定5倍融资；旧持仓和旧挂单转换前保留原规则。追加担保金独立展示，港股风险补仓及强平仅使用港币账户。" /></template
         ><SettingsBlock :editing="editing" :data="setting.risk" :fields="riskFields" /></ElCard
       ><ElCard shadow="never" class="panel"
         ><template #header
@@ -223,7 +223,7 @@
     ['nonTradingFee', '非交易日收费', 'boolean']
   ])
   const hkTradeFields = fields([
-    ['enabled', '启用港币全额市价模拟交易', 'boolean'],
+    ['enabled', '启用港币5倍融资模拟交易', 'boolean'],
     ['commission', '佣金费率（买卖双向）', 'number'],
     ['minCommission', '最低佣金（每笔）', 'number'],
     ['stampDuty', '印花税费率（买卖双向）', 'number'],
@@ -238,9 +238,7 @@
     ['maxSyncRows', '单次最大同步条数', 'number']
   ])
   const riskFields = fields([
-    ['defaultLeverage', '默认杠杆倍数', 'number'],
     ['forceCloseRatio', '强制平仓比例', 'number'],
-    ['appLeverageEnabled', 'App可用资金是否乘杠杆倍数', 'boolean'],
     ['managementFeePerTenThousand', '每日持仓管理费（元/万元）', 'number'],
     ['marginCallStart', '股票下跌触发补仓（%）', 'number'],
     ['marginCallRate', '每跌1%补充当前市值比例（1%=0.01）', 'number']

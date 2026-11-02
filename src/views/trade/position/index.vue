@@ -29,11 +29,12 @@
               }}</small></template
             ></ElTableColumn
           ><ElTableColumn prop="currency" label="币种" /><ElTableColumn
-            label="市值/担保金"
-            min-width="125"
+            label="市值/基础本金/追加担保"
+            min-width="190"
             ><template #default="{ row }"
               >{{ money(row.market_value, row.currency)
-              }}<small>{{ money(row.margin, row.currency) }}</small></template
+              }}<small>本金 {{ money(row.base_margin ?? row.margin, row.currency) }}</small
+              ><small>追加 {{ money(row.supplemental_margin ?? 0, row.currency) }}</small></template
             ></ElTableColumn
           ><ElTableColumn label="杠杆"
             ><template #default="{ row }">{{ row.leverage.toFixed(2) }}倍</template></ElTableColumn
@@ -131,6 +132,10 @@
             value-format="X"
             placeholder="选择创建时间（可选）"
             style="width: 100%" /></ElFormItem
+        ><ElFormItem v-if="current" label="资金说明"
+          ><p class="tip"
+            >编辑保留已经扣入的追加担保金，不自动扣款或退款。修改数量、成本前请先核对账务；原持仓杠杆只能通过专用转换调整。</p
+          ></ElFormItem
         ><ElRow :gutter="16" v-if="current"
           ><ElCol :xs="24" :sm="12"
             ><ElFormItem label="可用数量"
@@ -142,6 +147,7 @@
             ><ElFormItem label="杠杆倍数"
               ><ElInputNumber
                 v-model="form.leverage"
+                disabled
                 :min="1"
                 :max="20"
                 :precision="2" /></ElFormItem></ElCol></ElRow
@@ -150,7 +156,7 @@
             ><ElRadio :value="true">记录</ElRadio
             ><ElRadio :value="false">不记录</ElRadio></ElRadioGroup
           ><p class="tip"
-            >选择“记录”会保留本次仓位调整的审计信息；“不记录”仅修改持仓与资金。</p
+            >选择“记录”会保留本次仓位调整的审计信息；本表单不自动扣款或退款。</p
           ></ElFormItem
         ><ElFormItem label="创建时间" v-if="current"
           ><ElInput :model-value="time(current.buy_at)" disabled /></ElFormItem
