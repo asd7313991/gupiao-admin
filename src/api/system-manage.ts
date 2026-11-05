@@ -255,7 +255,7 @@ export interface CustomerFundRecord {
   amount: number
   balance: number
   remark: string
-  created_at: string
+  created_at: number | string
 }
 
 export function fetchCustomerDevices(phone?: string) {
