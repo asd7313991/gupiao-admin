@@ -635,6 +635,7 @@ export interface FinanceRecharge {
   failure_reason: string
   created_at: string
   reviewed_at: number
+  recorded_at?: number
 }
 export interface FinanceWithdrawal {
   id: number
@@ -651,6 +652,7 @@ export interface FinanceWithdrawal {
   failure_reason: string
   created_at: string
   reviewed_at: number
+  recorded_at?: number
 }
 const financeUrl = '/server-api/private/admin/platform/finance'
 export function fetchFinanceRecharges(params: {

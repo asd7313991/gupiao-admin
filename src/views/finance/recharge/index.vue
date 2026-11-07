@@ -27,7 +27,9 @@
           <ElTableColumn label="充值金额"
             ><template #default="{ row }">{{ money(row.amount) }}</template></ElTableColumn
           >
-          <ElTableColumn prop="currency" label="币种" />
+          <ElTableColumn label="币种">
+            <template #default="{ row }">{{ currencyText(row.currency) }}</template>
+          </ElTableColumn>
           <ElTableColumn label="状态"
             ><template #default="{ row }"
               ><ElTag :type="statusType(row.status)">{{ statusText(row.status) }}</ElTag></template
@@ -83,7 +85,7 @@
             >{{ current.customer_name }}（{{ current.customer_phone }}）</ElFormItem
           >
           <ElFormItem label="充值金额"
-            >{{ money(current.amount) }} {{ current.currency }}</ElFormItem
+            >{{ money(current.amount) }} {{ currencyText(current.currency) }}</ElFormItem
           >
           <ElAlert
             :title="
@@ -111,11 +113,26 @@
           <ElFormItem label="充值金额"
             ><ElInputNumber v-model="form.amount" :min="0.01" :precision="2"
           /></ElFormItem>
-          <ElFormItem label="币种"
-            ><ElSelect v-model="form.currency"
-              ><ElOption label="CNY" value="CNY" /><ElOption label="HKD" value="HKD" /></ElSelect
-          ></ElFormItem>
+          <ElFormItem label="币种">
+            <ElSelect v-model="form.currency">
+              <ElOption
+                v-for="option in currencyOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
+            </ElSelect>
+          </ElFormItem>
           <ElFormItem label="充值方式"><ElInput v-model="form.method" /></ElFormItem>
+          <ElFormItem label="申请时间">
+            <ElDatePicker
+              v-model="form.recorded_at"
+              type="datetime"
+              value-format="X"
+              placeholder="请选择申请时间"
+              style="width: 100%"
+            />
+          </ElFormItem>
           <ElFormItem label="状态"><ElTag type="warning">待审核</ElTag></ElFormItem>
           <ElFormItem label="备注"><ElInput v-model="form.remark" /></ElFormItem>
         </template>
@@ -143,6 +160,12 @@
     type FinanceRecharge
   } from '@/api/system-manage'
   defineOptions({ name: 'FinanceRecharge' })
+  const currencyOptions = [
+    { label: '人民币', value: 'CNY' },
+    { label: '港币', value: 'HKD' }
+  ]
+  const currencyText = (currency: string) =>
+    currencyOptions.find((option) => option.value === currency)?.label || currency || '--'
   const loading = ref(false),
     rows = ref<FinanceRecharge[]>([]),
     total = ref(0),
@@ -213,8 +236,9 @@
     customer_id: 1,
     amount: 0,
     currency: 'CNY',
-    method: '支付宝转账',
-    remark: ''
+    method: '银转证',
+    remark: '',
+    recorded_at: String(Math.floor(Date.now() / 1000))
   })
   const closeEditor = (done: () => void) => {
     if (!saving.value) done()
@@ -225,8 +249,9 @@
       customer_id: 1,
       amount: 0,
       currency: 'CNY',
-      method: '支付宝转账',
-      remark: ''
+      method: '银转证',
+      remark: '',
+      recorded_at: String(Math.floor(Date.now() / 1000))
     })
     visible.value = true
   }
@@ -262,7 +287,7 @@
               failure_reason: reviewStatus.value === 3 ? failureReason.value.trim() : '',
               remark: reviewRemark.value.trim()
             }
-          : { ...form, status: 2 }
+          : { ...form, recorded_at: Number(form.recorded_at), status: 2 }
       )
       ElMessage.success(
         current.value
