@@ -94,7 +94,7 @@
             mark="▣"
             color="green"
             title="杠杆和风控"
-            desc="A股、港股新建持仓固定5倍融资；旧持仓和旧挂单转换前保留原规则。追加担保金独立展示，港股风险补仓及强平仅使用港币账户。" /></template
+            desc="A股、港股新建持仓固定5倍孖展；旧持仓和旧挂单转换前保留原规则。追加担保金独立展示，港股风险补仓及强平仅使用港币账户。" /></template
         ><SettingsBlock :editing="editing" :data="setting.risk" :fields="riskFields" /></ElCard
       ><ElCard shadow="never" class="panel"
         ><template #header
@@ -223,7 +223,7 @@
     ['nonTradingFee', '非交易日收费', 'boolean']
   ])
   const hkTradeFields = fields([
-    ['enabled', '启用港币5倍融资模拟交易', 'boolean'],
+    ['enabled', '启用港币5倍孖展模拟交易', 'boolean'],
     ['commission', '佣金费率（买卖双向）', 'number'],
     ['minCommission', '最低佣金（每笔）', 'number'],
     ['stampDuty', '印花税费率（买卖双向）', 'number'],
