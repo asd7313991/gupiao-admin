@@ -107,9 +107,14 @@
           <ElFormItem label="审核备注"><ElInput v-model="reviewRemark" /></ElFormItem>
         </template>
         <template v-else>
-          <ElFormItem label="客户ID"
-            ><ElInputNumber v-model="form.customer_id" :min="1"
-          /></ElFormItem>
+          <ElFormItem label="客户手机号">
+            <ElInput
+              v-model.trim="form.customer_phone"
+              inputmode="numeric"
+              maxlength="20"
+              placeholder="请输入客户手机号"
+            />
+          </ElFormItem>
           <ElFormItem label="充值金额"
             ><ElInputNumber v-model="form.amount" :min="0.01" :precision="2"
           /></ElFormItem>
@@ -233,7 +238,7 @@
     failureReason = ref(''),
     reviewRemark = ref('')
   const form = reactive({
-    customer_id: 1,
+    customer_phone: '',
     amount: 0,
     currency: 'CNY',
     method: '银转证',
@@ -246,7 +251,7 @@
   const openCreate = () => {
     current.value = null
     Object.assign(form, {
-      customer_id: 1,
+      customer_phone: '',
       amount: 0,
       currency: 'CNY',
       method: '银转证',
@@ -269,12 +274,9 @@
       return ElMessage.warning('请填写充值失败原因')
     if (
       !current.value &&
-      (!Number.isFinite(form.amount) ||
-        form.amount <= 0 ||
-        !Number.isInteger(form.customer_id) ||
-        form.customer_id < 1)
+      (!Number.isFinite(form.amount) || form.amount <= 0 || !form.customer_phone)
     )
-      return ElMessage.warning('请输入有效的客户ID和充值金额')
+      return ElMessage.warning('请输入有效的客户手机号和充值金额')
     saving.value = true
     try {
       await saveFinanceRecharge(

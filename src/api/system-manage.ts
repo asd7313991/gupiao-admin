@@ -668,7 +668,7 @@ export function fetchFinanceRecharges(params: {
   })
 }
 export function saveFinanceRecharge(
-  data: Partial<FinanceRecharge> & { customer_id: number; amount: number }
+  data: Partial<FinanceRecharge> & { customer_phone?: string; amount: number }
 ) {
   return data.id
     ? request.put<FinanceRecharge>({ url: `${financeUrl}/recharges`, params: data })
