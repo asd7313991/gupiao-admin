@@ -65,10 +65,17 @@
       width="600px"
     >
       <ElForm label-width="90px">
-        <ElFormItem label="客户ID"
-          ><ElInputNumber v-model="form.customer_id" :min="1"
-        /></ElFormItem>
-        <ElRow :gutter="16">
+        <ElFormItem :label="current ? '客户ID' : '客户手机号'">
+          <ElInputNumber v-if="current" v-model="form.customer_id" :min="1" />
+          <ElInput
+            v-else
+            v-model.trim="form.customer_phone"
+            inputmode="numeric"
+            maxlength="20"
+            placeholder="请输入客户手机号"
+          />
+        </ElFormItem>
+        <ElRow class="withdrawal-amount-row" :gutter="16">
           <ElCol :span="12">
             <ElFormItem label="提现金额">
               <ElInputNumber v-model="form.amount" :min="0.01" :precision="2" />
@@ -87,9 +94,18 @@
             </ElFormItem>
           </ElCol>
         </ElRow>
-        <ElFormItem label="开户行"><ElInput v-model="form.bank_name" /></ElFormItem>
-        <ElFormItem label="银行卡号"><ElInput v-model="form.bank_card" /></ElFormItem>
-        <ElFormItem label="开户地址"><ElInput v-model="form.bank_address" /></ElFormItem>
+        <template v-if="current">
+          <ElFormItem label="开户行"><ElInput v-model="form.bank_name" /></ElFormItem>
+          <ElFormItem label="银行卡号"><ElInput v-model="form.bank_card" /></ElFormItem>
+          <ElFormItem label="开户地址"><ElInput v-model="form.bank_address" /></ElFormItem>
+        </template>
+        <ElAlert
+          v-else
+          title="开户行、银行卡号和开户地址将自动使用客户资料"
+          type="info"
+          :closable="false"
+          show-icon
+        />
         <ElFormItem v-if="!current" label="申请时间">
           <ElDatePicker
             v-model="form.recorded_at"
@@ -199,7 +215,8 @@
   const visible = ref(false)
   const current = ref<FinanceWithdrawal | null>(null)
   const form = reactive({
-    customer_id: 1,
+    customer_id: 0,
+    customer_phone: '',
     amount: 0,
     currency: 'CNY',
     method: '银行卡',
@@ -217,6 +234,7 @@
       row
         ? {
             customer_id: row.customer_id,
+            customer_phone: row.customer_phone,
             amount: row.amount,
             currency: row.currency,
             method: row.method,
@@ -228,7 +246,8 @@
             recorded_at: String(Math.floor(new Date(row.created_at).getTime() / 1000))
           }
         : {
-            customer_id: 1,
+            customer_id: 0,
+            customer_phone: '',
             amount: 0,
             currency: 'CNY',
             method: '银行卡',
@@ -244,6 +263,7 @@
   }
   const save = async () => {
     if (!form.amount) return ElMessage.warning('请输入提现金额')
+    if (!current.value && !form.customer_phone) return ElMessage.warning('请输入客户手机号')
     await saveFinanceWithdrawal({
       id: current.value?.id,
       ...form,
@@ -292,5 +312,18 @@
   :deep(.el-input-number),
   :deep(.el-select) {
     width: 100%;
+  }
+
+  :deep(.el-input-number .el-input),
+  :deep(.el-input-number .el-input__wrapper),
+  :deep(.el-input-number .el-input__inner) {
+    min-width: 0;
+  }
+
+  @media (width <= 600px) {
+    .withdrawal-amount-row :deep(.el-col) {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
   }
 </style>

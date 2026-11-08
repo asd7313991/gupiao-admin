@@ -687,7 +687,7 @@ export function fetchFinanceWithdrawals(params: {
   })
 }
 export function saveFinanceWithdrawal(
-  data: Partial<FinanceWithdrawal> & { customer_id: number; amount: number }
+  data: Partial<FinanceWithdrawal> & { customer_phone?: string; amount: number }
 ) {
   return data.id
     ? request.put<FinanceWithdrawal>({ url: `${financeUrl}/withdrawals`, params: data })
