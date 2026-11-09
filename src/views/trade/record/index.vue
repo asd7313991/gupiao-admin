@@ -26,7 +26,9 @@
             ><b>{{ row.stock_name }}</b
             ><small class="profit">{{ row.symbol }}</small></template
           ></ElTableColumn
-        ><ElTableColumn prop="currency" label="币种" /><ElTableColumn label="类型"
+        ><ElTableColumn label="币种"
+          ><template #default="{ row }">{{ currencyText(row.currency) }}</template></ElTableColumn
+        ><ElTableColumn label="类型"
           ><template #default="{ row }"
             ><ElTag :type="row.direction === '买入' ? 'success' : 'danger'">{{
               row.direction
@@ -172,6 +174,8 @@
   }
   const money = (v: number, currency = 'CNY') =>
       `${currency === 'HKD' ? 'HK$' : '¥'}${v.toFixed(2)}`,
+    currencyText = (currency: string) =>
+      currency === 'CNY' ? '人民币' : currency === 'HKD' ? '港币' : currency || '--',
     time = (v: number) => new Date(v * 1000).toLocaleString('zh-CN', { hour12: false })
   const empty = () => ({
     customer_id: 1,

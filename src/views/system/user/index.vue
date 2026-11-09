@@ -203,16 +203,6 @@
             fit="cover"
             style="width: 180px; height: 120px"
           /><span v-else>未上传</span></ElDescriptionsItem
-        ><ElDescriptionsItem label="认证视频" :span="2"
-          ><video
-            v-if="detailVideoURL"
-            :src="detailVideoURL"
-            controls
-            preload="metadata"
-            style="width: 100%; max-height: 320px"
-          /><span v-else>{{
-            detail.verification_video ? '认证视频加载失败' : '未上传'
-          }}</span></ElDescriptionsItem
         ></ElDescriptions
       ><template #footer
         ><ElButton type="primary" @click="closeDetail">关闭</ElButton></template
@@ -278,7 +268,6 @@
     deleteCustomer,
     depositCustomer,
     fetchCustomerDetail,
-    fetchCustomerVerificationVideo,
     fetchCustomers,
     updateCustomer,
     updateCustomerFundStatus,
@@ -399,27 +388,14 @@
     load()
   }
   const detailVisible = ref(false),
-    detail = ref<Customer | null>(null),
-    detailVideoURL = ref('')
-  const releaseDetailVideo = () => {
-    if (detailVideoURL.value) URL.revokeObjectURL(detailVideoURL.value)
-    detailVideoURL.value = ''
-  }
+    detail = ref<Customer | null>(null)
   const closeDetail = () => {
     detailVisible.value = false
-    releaseDetailVideo()
   }
   const details = async (row: Customer) => {
-    releaseDetailVideo()
     const customer = await fetchCustomerDetail(row.id)
     detail.value = customer
     detailVisible.value = true
-    if (!customer.verification_video) return
-    try {
-      detailVideoURL.value = await fetchCustomerVerificationVideo(customer.id)
-    } catch (error) {
-      ElMessage.error(error instanceof Error ? error.message : '读取认证视频失败')
-    }
   }
   const depositVisible = ref(false),
     depositing = ref<Customer | null>(null),
@@ -476,7 +452,6 @@
     load()
   }
   onMounted(load)
-  onBeforeUnmount(releaseDetailVideo)
 </script>
 
 <style scoped lang="scss">

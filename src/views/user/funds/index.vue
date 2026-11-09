@@ -34,7 +34,9 @@
           <ElTableColumn label="变动后余额" min-width="130" align="right">
             <template #default="{ row }">{{ row.balance.toFixed(2) }}</template>
           </ElTableColumn>
-          <ElTableColumn prop="currency" label="币种" width="80" />
+          <ElTableColumn label="币种" width="80">
+            <template #default="{ row }">{{ currencyText(row.currency) }}</template>
+          </ElTableColumn>
           <ElTableColumn label="创建时间（北京时间）" min-width="190">
             <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
           </ElTableColumn>
@@ -76,7 +78,7 @@
         </ElDescriptionsItem>
         <ElDescriptionsItem label="原始记录金额">{{ detail.amount.toFixed(2) }}</ElDescriptionsItem>
         <ElDescriptionsItem label="变动后余额">{{ detail.balance.toFixed(2) }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="币种">{{ detail.currency }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="币种">{{ currencyText(detail.currency) }}</ElDescriptionsItem>
         <ElDescriptionsItem label="创建时间（北京时间）">{{
           formatTime(detail.created_at)
         }}</ElDescriptionsItem>
@@ -113,6 +115,8 @@
     rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value)
   )
   const rowIndex = (index: number) => (page.value - 1) * pageSize.value + index + 1
+  const currencyText = (currency: string) =>
+    currency === 'CNY' ? '人民币' : currency === 'HKD' ? '港币' : currency || '--'
   let latestRequest = 0
   const load = async () => {
     const request = ++latestRequest

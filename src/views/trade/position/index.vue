@@ -28,9 +28,9 @@
                 row.quantity_basis === 1 ? '实际股数 / 股票收益率' : '旧口径 / 杠杆收益率'
               }}</small></template
             ></ElTableColumn
-          ><ElTableColumn prop="currency" label="币种" /><ElTableColumn
-            label="市值/基础本金/追加担保"
-            min-width="190"
+          ><ElTableColumn label="币种"
+            ><template #default="{ row }">{{ currencyText(row.currency) }}</template></ElTableColumn
+          ><ElTableColumn label="市值/基础本金/追加担保" min-width="190"
             ><template #default="{ row }"
               >{{ money(row.market_value, row.currency)
               }}<small>本金 {{ money(row.base_margin ?? row.margin, row.currency) }}</small
@@ -211,6 +211,8 @@
   }
   const money = (v: number, currency = 'CNY') =>
       `${currency === 'HKD' ? 'HK$' : '¥'}${v.toFixed(2)}`,
+    currencyText = (currency: string) =>
+      currency === 'CNY' ? '人民币' : currency === 'HKD' ? '港币' : currency || '--',
     time = (v: number) => new Date(v * 1000).toLocaleString('zh-CN', { hour12: false })
   const empty = () => ({
     phone: '',
