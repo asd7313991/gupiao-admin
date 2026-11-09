@@ -116,13 +116,14 @@
           />
         </ElFormItem>
         <ElFormItem label="状态">
-          <ElSelect v-model="form.status">
-            <ElOption label="待审核" :value="3" />
+          <ElTag v-if="!current" type="warning">待审核</ElTag>
+          <ElSelect v-else v-model="form.status">
+            <ElOption label="待审核" :value="2" />
             <ElOption label="成功" :value="1" />
-            <ElOption label="失败" :value="2" />
+            <ElOption label="失败" :value="3" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem v-if="form.status === 2" label="失败原因">
+        <ElFormItem v-if="current && form.status === 3" label="失败原因">
           <ElInput v-model="form.failure_reason" />
         </ElFormItem>
       </ElForm>
@@ -168,8 +169,8 @@
         placeholder: '请选择提现状态',
         options: [
           { label: '成功', value: '1' },
-          { label: '失败', value: '2' },
-          { label: '待审核', value: '3' }
+          { label: '待审核', value: '2' },
+          { label: '失败', value: '3' }
         ]
       }
     }
@@ -208,9 +209,9 @@
       : value
         ? new Date(value).toLocaleString('zh-CN', { hour12: false })
         : '--'
-  const statusText = (status: number) => (status === 1 ? '成功' : status === 2 ? '失败' : '待审核')
+  const statusText = (status: number) => (status === 1 ? '成功' : status === 2 ? '待审核' : '失败')
   const statusType = (status: number) =>
-    status === 1 ? 'success' : status === 2 ? 'danger' : 'warning'
+    status === 1 ? 'success' : status === 2 ? 'warning' : 'danger'
 
   const visible = ref(false)
   const current = ref<FinanceWithdrawal | null>(null)
@@ -223,7 +224,7 @@
     bank_name: '',
     bank_card: '',
     bank_address: '',
-    status: 3,
+    status: 2,
     failure_reason: '',
     recorded_at: String(Math.floor(Date.now() / 1000))
   })
@@ -254,7 +255,7 @@
             bank_name: '',
             bank_card: '',
             bank_address: '',
-            status: 3,
+            status: 2,
             failure_reason: '',
             recorded_at: String(Math.floor(Date.now() / 1000))
           }
@@ -274,7 +275,28 @@
     void load()
   }
 
-  onMounted(load)
+  let autoRefreshTimer: ReturnType<typeof setInterval> | undefined
+  const startAutoRefresh = () => {
+    if (autoRefreshTimer) return
+    autoRefreshTimer = setInterval(() => {
+      if (!document.hidden && !visible.value && !loading.value) void load()
+    }, 15_000)
+  }
+  const stopAutoRefresh = () => {
+    if (!autoRefreshTimer) return
+    clearInterval(autoRefreshTimer)
+    autoRefreshTimer = undefined
+  }
+  onMounted(() => {
+    void load()
+    startAutoRefresh()
+  })
+  onActivated(() => {
+    void load()
+    startAutoRefresh()
+  })
+  onDeactivated(stopAutoRefresh)
+  onBeforeUnmount(stopAutoRefresh)
 </script>
 
 <style scoped>
