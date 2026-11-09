@@ -649,6 +649,7 @@ export interface FinanceWithdrawal {
   bank_card: string
   bank_address: string
   status: number
+  remark: string
   failure_reason: string
   created_at: string
   reviewed_at: number
