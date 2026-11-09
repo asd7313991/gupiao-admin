@@ -101,7 +101,7 @@
         </template>
         <ElAlert
           v-else
-          title="开户行、银行卡号和开户地址将自动使用客户资料"
+          title="开户行和银行卡号将自动使用客户资料，开户地址如有配置也会一并带入"
           type="info"
           :closable="false"
           show-icon
