@@ -40,10 +40,12 @@
           <ElTableColumn label="创建时间（北京时间）" min-width="190">
             <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
           </ElTableColumn>
-          <ElTableColumn label="操作" width="130" fixed="right">
+          <ElTableColumn label="操作" width="130" align="center" fixed="right">
             <template #default="{ row }">
-              <ElButton text @click="view(row)">查看</ElButton>
-              <ElButton text type="danger" @click="remove(row)">删除</ElButton>
+              <div class="fund-actions">
+                <ElButton text @click="view(row)">查看</ElButton>
+                <ElButton text type="danger" @click="remove(row)">删除</ElButton>
+              </div>
             </template>
           </ElTableColumn>
         </ElTable>
@@ -259,6 +261,18 @@
   .remark {
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+  }
+
+  .fund-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .fund-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 
   .in {
