@@ -40,10 +40,11 @@
           <ElTableColumn label="创建时间（北京时间）" min-width="190">
             <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
           </ElTableColumn>
-          <ElTableColumn label="操作" width="80" fixed="right">
-            <template #default="{ row }"
-              ><ElButton text @click="view(row)">查看</ElButton></template
-            >
+          <ElTableColumn label="操作" width="130" fixed="right">
+            <template #default="{ row }">
+              <ElButton text @click="view(row)">查看</ElButton>
+              <ElButton text type="danger" @click="remove(row)">删除</ElButton>
+            </template>
           </ElTableColumn>
         </ElTable>
       </div>
@@ -60,7 +61,9 @@
           @size-change="resize"
         />
       </div>
-      <p class="fund-note">金额正负号按收支方向展示；仅供核账查看，不修改原始资金记录。</p>
+      <p class="fund-note">
+        金额正负号按收支方向展示；删除仅永久移除流水记录，不会回滚客户余额或已完成业务。
+      </p>
     </ElCard>
     <ElDialog v-model="visible" title="资金流水详情" width="min(600px, calc(100% - 24px))">
       <ElDescriptions v-if="detail" :column="1" border>
@@ -90,8 +93,12 @@
 </template>
 
 <script setup lang="ts">
-  import type { TableInstance } from 'element-plus'
-  import { fetchCustomerFundRecords, type CustomerFundRecord } from '@/api/system-manage'
+  import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus'
+  import {
+    deleteCustomerFundRecord,
+    fetchCustomerFundRecords,
+    type CustomerFundRecord
+  } from '@/api/system-manage'
 
   defineOptions({ name: 'UserFunds' })
   const loading = ref(false)
@@ -157,6 +164,26 @@
   const view = (row: CustomerFundRecord) => {
     detail.value = row
     visible.value = true
+  }
+  const remove = async (row: CustomerFundRecord) => {
+    try {
+      await ElMessageBox.confirm(
+        `确定永久删除资金流水 #${row.id} 吗？此操作无法恢复，也不会回滚客户余额或已完成业务。`,
+        '永久删除资金流水',
+        { confirmButtonText: '永久删除', cancelButtonText: '取消', type: 'warning' }
+      )
+      await deleteCustomerFundRecord(row.id)
+      if (detail.value?.id === row.id) {
+        visible.value = false
+        detail.value = null
+      }
+      ElMessage.success('资金流水已永久删除')
+      await load()
+    } catch (error) {
+      if (error !== 'cancel' && error !== 'close') {
+        ElMessage.error(error instanceof Error ? error.message : '删除资金流水失败')
+      }
+    }
   }
   const amountClass = (row: CustomerFundRecord) =>
     row.direction === '入账'

@@ -282,6 +282,13 @@ export function fetchCustomerFundRecords(phone?: string) {
   })
 }
 
+export function deleteCustomerFundRecord(id: number) {
+  return request.del<void>({
+    url: `${customerUrl}/fund-records`,
+    params: { id }
+  })
+}
+
 const administratorUrl = '/server-api/private/admin/system/user'
 
 export function updateAdministratorPassword(data: { id: number; password: string }) {
