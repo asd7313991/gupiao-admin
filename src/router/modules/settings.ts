@@ -6,6 +6,18 @@ export const settingsRoutes: AppRouteRecord = {
   meta: { title: '应用配置', icon: 'ri-settings-3-line', roles: ['R_SUPER', 'R_ADMIN'] },
   children: [
     {
+      path: 'customer-service',
+      name: 'SettingsCustomerService',
+      component: '/settings/customer-service',
+      meta: { title: '客服设置' }
+    },
+    {
+      path: 'sounds',
+      name: 'SettingsSounds',
+      component: '/settings/sounds',
+      meta: { title: '声音提醒' }
+    },
+    {
       path: 'system',
       name: 'SettingsSystem',
       component: '/settings/system',

@@ -16,11 +16,13 @@
 
     <div id="app-global">
       <ArtGlobalComponent />
+      <ArtSoundReminder />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+  import ArtSoundReminder from '@/components/core/layouts/art-sound-reminder/index.vue'
   defineOptions({ name: 'AppLayout' })
 </script>
 

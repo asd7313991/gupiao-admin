@@ -132,7 +132,7 @@
             mark="⚙"
             color="blue"
             title="系统设置"
-            desc="行情、客服与消息服务地址" /></template
+            desc="行情与消息服务地址；客服链接请到“客服设置”管理" /></template
         ><ElAlert
           title="港币汇率每日自动同步"
           description="资金互转统一使用中国货币网每日参考汇率，双向兑换使用同一值。周末、已维护的节假日沿用最近公布值；应公布新汇率但未同步成功时暂停新兑换。原人工汇率不再用于兑换，汇率日期及来源在客户端资金互转中查看。"
@@ -264,7 +264,6 @@
     ['newStockTrade', '上市当日新股交易', 'boolean']
   ])
   const linkFields = fields([
-    ['customerService', '在线客服链接', 'text'],
     ['aQuote', 'A股行情链接', 'text'],
     ['hkQuote', '港股行情链接', 'text'],
     ['telegramToken', 'Telegram 密钥', 'text'],
