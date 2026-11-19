@@ -81,8 +81,14 @@
           ></ElTableColumn
         >
         <ElTableColumn prop="updated_at" label="更新时间" min-width="170" />
-        <ElTableColumn label="操作" width="80" fixed="right"
+        <ElTableColumn label="操作" width="180" fixed="right"
           ><template #default="{ row }"
+            ><ElButton
+              type="primary"
+              link
+              :disabled="row.verified === 1 || reviewSubmitting"
+              @click="review(row, 1)"
+              >人工通过</ElButton
             ><ElDropdown trigger="click"
               ><ElButton text class="more">⋮</ElButton
               ><template #dropdown
@@ -158,6 +164,9 @@
       v-model="reviewVisible"
       :title="reviewState === 1 ? '人工审核通过' : '驳回实名认证'"
       width="460px"
+      :close-on-click-modal="!reviewSubmitting"
+      :close-on-press-escape="!reviewSubmitting"
+      :show-close="!reviewSubmitting"
       ><ElAlert
         v-if="reviewState === 1"
         title="请先人工核对身份证正反面、姓名号码及正脸照片。检测到人脸不等于认证通过。"
@@ -165,6 +174,7 @@
         :closable="false"
       />
       <ElForm label-width="90px"
+        ><ElFormItem label="客户">{{ reviewTarget?.name }}（{{ reviewTarget?.phone }}）</ElFormItem
         ><ElFormItem label="审核结果"
           ><ElTag :type="reviewState === 1 ? 'success' : 'danger'">{{
             reviewState === 1 ? '通过' : '驳回'
@@ -172,14 +182,17 @@
         ><ElFormItem label="审核备注" :required="reviewState === 3"
           ><ElInput
             v-model="reviewRemark"
+            :disabled="reviewSubmitting"
             type="textarea"
             :rows="3"
             :placeholder="
               reviewState === 3 ? '请填写驳回原因' : '可填写审核备注'
             " /></ElFormItem></ElForm
       ><template #footer
-        ><ElButton @click="reviewVisible = false">取消</ElButton
-        ><ElButton type="primary" @click="submitReview">确认审核</ElButton></template
+        ><ElButton :disabled="reviewSubmitting" @click="reviewVisible = false">取消</ElButton
+        ><ElButton type="primary" :loading="reviewSubmitting" @click="submitReview"
+          >确认审核</ElButton
+        ></template
       ></ElDialog
     >
   </div>
@@ -237,27 +250,35 @@
     detailVisible.value = false
   }
   const reviewVisible = ref(false),
+    reviewSubmitting = ref(false),
     reviewState = ref(1),
     reviewTarget = ref<Customer | null>(null),
     reviewRemark = ref('')
   const review = (row: Customer, state: number) => {
+    if (reviewSubmitting.value) return
     reviewTarget.value = row
     reviewState.value = state
     reviewRemark.value = ''
     reviewVisible.value = true
   }
   const submitReview = async () => {
+    if (reviewSubmitting.value) return
     if (!reviewTarget.value) return
     if (reviewState.value === 3 && !reviewRemark.value.trim())
       return ElMessage.warning('请填写驳回原因')
-    await reviewCustomerVerification({
-      id: reviewTarget.value.id,
-      verified: reviewState.value,
-      remark: reviewRemark.value.trim()
-    })
-    ElMessage.success('审核结果已保存')
-    reviewVisible.value = false
-    load()
+    reviewSubmitting.value = true
+    try {
+      await reviewCustomerVerification({
+        id: reviewTarget.value.id,
+        verified: reviewState.value,
+        remark: reviewRemark.value.trim()
+      })
+      ElMessage.success('审核结果已保存')
+      reviewVisible.value = false
+      await load()
+    } finally {
+      reviewSubmitting.value = false
+    }
   }
   const toggleStatus = async (row: Customer) => {
     const next = row.status === 1 ? 2 : 1
