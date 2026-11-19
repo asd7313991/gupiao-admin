@@ -169,7 +169,7 @@
       :show-close="!reviewSubmitting"
       ><ElAlert
         v-if="reviewState === 1"
-        title="请先人工核对身份证正反面、姓名号码及正脸照片。检测到人脸不等于认证通过。"
+        title="后台人工通过不要求上传身份证照片、正脸照片或完成人脸采集。确认后，该客户将被标记为已认证。"
         type="warning"
         :closable="false"
       />
@@ -294,7 +294,7 @@
   const batchReview = async () => {
     const ids = selected.value.map((item) => item.id)
     await ElMessageBox.confirm(
-      `请确认已逐人对照身份证、姓名号码和正脸照片。确定人工批量通过 ${ids.length} 位客户吗？本地检测不是活体或人证核验。`,
+      `确定由后台人工通过所选 ${ids.length} 位客户的实名认证吗？此操作不要求上传身份证照片、正脸照片或完成人脸采集。`,
       '批量审核',
       {
         type: 'warning'

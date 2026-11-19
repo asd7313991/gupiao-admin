@@ -237,7 +237,7 @@
       :show-close="!reviewSubmitting"
     >
       <ElAlert
-        title="请先核对身份证正反面、姓名号码和正脸照片。此操作为人工审核，不代表自动人证比对或活体核验。"
+        title="后台人工通过不要求上传身份证照片、正脸照片或完成人脸采集。确认后，该客户将被标记为已认证。"
         type="warning"
         :closable="false"
         show-icon
@@ -245,13 +245,13 @@
       <ElForm label-width="90px">
         <ElFormItem label="客户">{{ reviewTarget?.name }}（{{ reviewTarget?.phone }}）</ElFormItem>
         <ElFormItem label="身份证号">{{ reviewTarget?.id_card || '未填写' }}</ElFormItem>
-        <ElFormItem label="认证材料">
+        <ElFormItem label="已有材料">
           <ElButton
             link
             type="primary"
             :disabled="reviewSubmitting"
             @click="reviewTarget && details(reviewTarget)"
-            >查看身份证及正脸照片</ElButton
+            >查看已上传材料（非必需）</ElButton
           >
         </ElFormItem>
         <ElFormItem label="审核备注">
@@ -259,7 +259,7 @@
         </ElFormItem>
         <ElFormItem>
           <ElCheckbox v-model="reviewConfirmed" :disabled="reviewSubmitting"
-            >我已核对该客户的身份材料，确认通过</ElCheckbox
+            >确认由后台人工通过该客户的实名认证</ElCheckbox
           >
         </ElFormItem>
       </ElForm>
@@ -491,7 +491,7 @@
   const submitReview = async () => {
     if (reviewSubmitting.value) return
     if (!reviewTarget.value || !reviewConfirmed.value)
-      return ElMessage.warning('请先核对客户身份材料并勾选确认')
+      return ElMessage.warning('请勾选确认人工通过该客户的实名认证')
     reviewSubmitting.value = true
     try {
       await reviewCustomerVerification({
