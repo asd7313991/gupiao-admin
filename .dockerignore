@@ -6,3 +6,5 @@ server
 *.local
 npm-debug.log*
 pnpm-debug.log*
+server-private
+*.log
