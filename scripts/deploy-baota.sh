@@ -11,6 +11,7 @@ BRANCH="${BRANCH:-main}"
 LOCK_FILE="${LOCK_FILE:-/tmp/gupiao-deploy.lock}"
 VERIFICATION_STORAGE_DIR="${VERIFICATION_STORAGE_DIR:-/www/wwwroot/gupiao-verification}"
 CONFIG_BACKUP_DIR=""
+DEPLOY_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 log() { printf '\033[1;34m[%s]\033[0m %s\n' "$(date '+%F %T')" "$*"; }
 fail() { printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
@@ -65,35 +66,21 @@ update_repo() {
 }
 
 build_mobile_on_host() {
-  if [[ -f "$MOBILE_REPO_DIR/pnpm-lock.yaml" ]]; then
-    command -v corepack >/dev/null || fail "移动端使用 pnpm，但服务器未安装 corepack"
-    corepack pnpm --dir "$MOBILE_REPO_DIR" install --frozen-lockfile
-    corepack pnpm --dir "$MOBILE_REPO_DIR" run lint
-    corepack pnpm --dir "$MOBILE_REPO_DIR" run build
-  elif [[ -f "$MOBILE_REPO_DIR/package-lock.json" ]]; then
-    npm --prefix "$MOBILE_REPO_DIR" ci
-    npm --prefix "$MOBILE_REPO_DIR" run lint
-    npm --prefix "$MOBILE_REPO_DIR" run build
-  else
-    log "移动端没有锁文件，使用 npm install"
-    npm --prefix "$MOBILE_REPO_DIR" install
-    npm --prefix "$MOBILE_REPO_DIR" run lint
-    npm --prefix "$MOBILE_REPO_DIR" run build
-  fi
+  sh "$DEPLOY_SCRIPT_DIR/build-mobile.sh" "$MOBILE_REPO_DIR" host
 }
 
 build_mobile_in_docker() {
   local build_command
   if [[ -f "$MOBILE_REPO_DIR/pnpm-lock.yaml" ]]; then
-    build_command='corepack enable && corepack prepare pnpm@10.17.1 --activate && pnpm install --frozen-lockfile && pnpm run lint && pnpm run build'
-  elif [[ -f "$MOBILE_REPO_DIR/package-lock.json" ]]; then
-    build_command='npm ci && npm run lint && npm run build'
+    build_command='corepack enable && corepack prepare pnpm@10.17.1 --activate && '
   else
-    log "移动端没有锁文件，使用 npm install"
-    build_command='npm install && npm run lint && npm run build'
+    build_command=''
   fi
+  build_command+='sh /deploy-build-mobile.sh /app docker-node22-alpine'
   docker run --rm \
     --volume "$MOBILE_REPO_DIR:/app" \
+    --volume "$DEPLOY_SCRIPT_DIR/build-mobile.sh:/deploy-build-mobile.sh:ro" \
+    --env "FORCE_MOBILE_INSTALL=${FORCE_MOBILE_INSTALL:-0}" \
     --workdir /app \
     node:22-alpine \
     sh -c "$build_command"
@@ -155,6 +142,9 @@ else
 fi
 
 log "安装移动端依赖并执行生产构建"
+[[ -f "$DEPLOY_SCRIPT_DIR/build-mobile.sh" ]] || fail "缺少 scripts/build-mobile.sh，请同步完整的部署脚本"
+log "移动端源码所在磁盘剩余空间"
+df -h "$MOBILE_REPO_DIR"
 if command -v node >/dev/null && command -v npm >/dev/null; then
   log "使用服务器 Node.js 构建移动端"
   build_mobile_on_host
@@ -166,7 +156,10 @@ fi
 
 log "构建并重启 Go 后端与后台生产容器"
 cd "$ADMIN_DIR"
-docker compose --profile production build server production
+log "串行构建后端镜像，避免与后台前端构建争抢磁盘"
+docker compose --profile production build server
+log "串行构建后台前端镜像（沿用 Docker 构建缓存）"
+docker compose --profile production build production
 docker compose --profile production up -d --force-recreate server production
 
 log "等待后端健康检查"

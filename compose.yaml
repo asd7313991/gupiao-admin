@@ -12,6 +12,7 @@ services:
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '1000'
       VITE_ENABLE_DEVTOOLS: 'false'
+      VITE_API_PROXY_URL: 'http://server:8080'
 
   server:
     build:
@@ -36,7 +37,6 @@ services:
       HTTP_SERVICES_FACE_RECOGNITION_STORAGE_DIR: /app/private/verification
     command: >
       sh -c "go run main.go --migrate && go run main.go --dev"
-
 
     depends_on:
       postgres:

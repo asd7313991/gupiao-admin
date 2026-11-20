@@ -72,14 +72,24 @@
             ><small>IP: -</small></template
           ></ElTableColumn
         >
-        <ElTableColumn label="操作" width="66" fixed="right"
+        <ElTableColumn label="操作" width="225" fixed="right"
           ><template #default="{ row }"
+            ><ElButton
+              type="primary"
+              link
+              :disabled="row.verified === 1 || reviewOpening || reviewSubmitting"
+              @click="openReview(row)"
+              >{{ row.verified === 1 ? '实名认证已通过' : '手动通过实名认证' }}</ElButton
             ><ElDropdown trigger="click"
               ><ElButton text class="more">⋮</ElButton
               ><template #dropdown
                 ><ElDropdownMenu
                   ><ElDropdownItem @click="details(row)">查看详情</ElDropdownItem
                   ><ElDropdownItem @click="edit(row)">编辑</ElDropdownItem
+                  ><ElDropdownItem
+                    :disabled="row.verified === 1 || reviewOpening || reviewSubmitting"
+                    @click="openReview(row)"
+                    >手动通过实名认证</ElDropdownItem
                   ><ElDropdownItem @click="openDeposit(row)">手动入账</ElDropdownItem
                   ><ElDropdownItem @click="openPassword(row, 'login')">修改登录密码</ElDropdownItem
                   ><ElDropdownItem @click="openPassword(row, 'trade')">修改交易密码</ElDropdownItem
@@ -203,11 +213,67 @@
             fit="cover"
             style="width: 180px; height: 120px"
           /><span v-else>未上传</span></ElDescriptionsItem
-        ></ElDescriptions
+        ><ElDescriptionsItem label="正脸照片"
+          ><ElImage
+            v-if="detail.verification_face"
+            :src="detail.verification_face"
+            :preview-src-list="[detail.verification_face]"
+            fit="cover"
+            style="width: 180px; height: 180px"
+          /><span v-else>未上传</span></ElDescriptionsItem
+        ><ElDescriptionsItem label="审核备注">{{
+          detail.verification_remark || '无'
+        }}</ElDescriptionsItem></ElDescriptions
       ><template #footer
         ><ElButton type="primary" @click="closeDetail">关闭</ElButton></template
       ></ElDialog
     >
+    <ElDialog
+      v-model="reviewVisible"
+      title="手动通过实名认证"
+      width="520px"
+      :close-on-click-modal="!reviewSubmitting"
+      :close-on-press-escape="!reviewSubmitting"
+      :show-close="!reviewSubmitting"
+    >
+      <ElAlert
+        title="后台人工通过不要求上传身份证照片、正脸照片或完成人脸采集。确认后，该客户将被标记为已认证。"
+        type="warning"
+        :closable="false"
+        show-icon
+      />
+      <ElForm label-width="90px">
+        <ElFormItem label="客户">{{ reviewTarget?.name }}（{{ reviewTarget?.phone }}）</ElFormItem>
+        <ElFormItem label="身份证号">{{ reviewTarget?.id_card || '未填写' }}</ElFormItem>
+        <ElFormItem label="已有材料">
+          <ElButton
+            link
+            type="primary"
+            :disabled="reviewSubmitting"
+            @click="reviewTarget && details(reviewTarget)"
+            >查看已上传材料（非必需）</ElButton
+          >
+        </ElFormItem>
+        <ElFormItem label="审核备注">
+          <ElInput v-model="reviewRemark" type="textarea" :rows="3" :disabled="reviewSubmitting" />
+        </ElFormItem>
+        <ElFormItem>
+          <ElCheckbox v-model="reviewConfirmed" :disabled="reviewSubmitting"
+            >确认由后台人工通过该客户的实名认证</ElCheckbox
+          >
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton :disabled="reviewSubmitting" @click="reviewVisible = false">取消</ElButton>
+        <ElButton
+          type="primary"
+          :loading="reviewSubmitting"
+          :disabled="!reviewConfirmed || reviewSubmitting"
+          @click="submitReview"
+          >确认通过</ElButton
+        >
+      </template>
+    </ElDialog>
     <ElDialog v-model="depositVisible" title="手动入账" width="600px"
       ><ElForm label-width="100px"
         ><ElFormItem label="客户姓名"
@@ -269,6 +335,7 @@
     depositCustomer,
     fetchCustomerDetail,
     fetchCustomers,
+    reviewCustomerVerification,
     updateCustomer,
     updateCustomerFundStatus,
     updateCustomerPassword,
@@ -396,6 +463,52 @@
     const customer = await fetchCustomerDetail(row.id)
     detail.value = customer
     detailVisible.value = true
+  }
+  const reviewVisible = ref(false),
+    reviewOpening = ref(false),
+    reviewSubmitting = ref(false),
+    reviewTarget = ref<Customer | null>(null),
+    reviewRemark = ref(''),
+    reviewConfirmed = ref(false)
+  const openReview = async (row: Customer) => {
+    if (reviewOpening.value || reviewSubmitting.value) return
+    reviewOpening.value = true
+    try {
+      const customer = await fetchCustomerDetail(row.id)
+      if (customer.verified === 1) {
+        ElMessage.warning('该客户的实名认证已通过')
+        await load()
+        return
+      }
+      reviewTarget.value = customer
+      reviewRemark.value = ''
+      reviewConfirmed.value = false
+      reviewVisible.value = true
+    } finally {
+      reviewOpening.value = false
+    }
+  }
+  const submitReview = async () => {
+    if (reviewSubmitting.value) return
+    if (!reviewTarget.value || !reviewConfirmed.value)
+      return ElMessage.warning('请勾选确认人工通过该客户的实名认证')
+    reviewSubmitting.value = true
+    try {
+      await reviewCustomerVerification({
+        id: reviewTarget.value.id,
+        verified: 1,
+        remark: reviewRemark.value.trim()
+      })
+      if (detail.value?.id === reviewTarget.value.id) {
+        detail.value.verified = 1
+        detail.value.verification_remark = reviewRemark.value.trim()
+      }
+      ElMessage.success('实名认证已手动审核通过')
+      reviewVisible.value = false
+      await load()
+    } finally {
+      reviewSubmitting.value = false
+    }
   }
   const depositVisible = ref(false),
     depositing = ref<Customer | null>(null),
