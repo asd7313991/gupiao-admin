@@ -25,7 +25,7 @@
               ><b>{{ row.stock_name }}</b
               ><small class="profit">{{ row.symbol }}</small
               ><small v-if="row.currency !== 'HKD'">{{
-                row.quantity_basis === 1 ? '实际股数 / 股票收益率' : '旧口径 / 杠杆收益率'
+                row.quantity_basis === 1 ? '实际股数 / 股票收益率' : '旧口径 / 孖展收益率'
               }}</small></template
             ></ElTableColumn
           ><ElTableColumn label="币种"
@@ -36,7 +36,7 @@
               }}<small>本金 {{ money(row.base_margin ?? row.margin, row.currency) }}</small
               ><small>追加 {{ money(row.supplemental_margin ?? 0, row.currency) }}</small></template
             ></ElTableColumn
-          ><ElTableColumn label="杠杆"
+          ><ElTableColumn label="孖展"
             ><template #default="{ row }">{{ row.leverage.toFixed(2) }}倍</template></ElTableColumn
           ><ElTableColumn label="持仓/可用"
             ><template #default="{ row }"
@@ -123,34 +123,65 @@
                 :precision="0" /></ElFormItem></ElCol></ElRow
         ><ElFormItem v-if="!current" label="新增规则"
           ><p class="tip"
-            >A股新增持仓按5倍杠杆：数量为实际股数，本金＝股数×每股成本÷5；市值和股票盈亏不再乘5。后台手工创建不自动扣客户余额。</p
+            >A股新增持仓按5倍孖展：数量为实际股数，本金＝股数×每股成本÷5；市值和股票盈亏不再乘5。按填写的买入时间执行T+1，下一交易日才可卖；后台手工创建不自动扣客户余额。</p
           ></ElFormItem
-        ><ElFormItem label="创建时间" v-if="!current"
+        ><ElFormItem label="买入时间" v-if="!current"
           ><ElDatePicker
             v-model="form.buy_at"
             type="datetime"
             value-format="X"
-            placeholder="选择创建时间（可选）"
+            placeholder="选择买入时间（默认当前时间）"
             style="width: 100%" /></ElFormItem
         ><ElFormItem v-if="current" label="资金说明"
           ><p class="tip"
-            >编辑保留已经扣入的追加担保金，不自动扣款或退款。修改数量、成本前请先核对账务；原持仓杠杆只能通过专用转换调整。</p
+            >编辑保留已经扣入的追加担保金，不自动扣款或退款。修改数量、成本前请先核对账务；原持仓孖展只能通过专用转换调整。</p
           ></ElFormItem
         ><ElRow :gutter="16" v-if="current"
           ><ElCol :xs="24" :sm="12"
             ><ElFormItem label="可用数量"
               ><ElInputNumber
                 v-model="form.available_qty"
+                disabled
                 :min="0"
                 :precision="0" /></ElFormItem></ElCol
           ><ElCol :xs="24" :sm="12"
-            ><ElFormItem label="杠杆倍数"
+            ><ElFormItem label="孖展倍数"
               ><ElInputNumber
                 v-model="form.leverage"
                 disabled
                 :min="1"
                 :max="20"
                 :precision="2" /></ElFormItem></ElCol></ElRow
+        ><ElFormItem label="T+1交收核对" v-if="current && current.currency !== 'HKD'"
+          ><div>
+            <p class="tip">{{
+              current.settlement_notice ||
+              (current.settlement_verified
+                ? '已核对交收信息'
+                : '旧持仓待核对，客户暂不可卖出或加仓')
+            }}</p>
+            <ElCheckbox v-model="form.confirm_settlement"
+              >已核对买入批次，补录交收数量（保存审计记录）</ElCheckbox
+            >
+            <template v-if="form.confirm_settlement">
+              <p class="tip"
+                >请先撤销该股票的待成交卖单。填写尚未到可卖日的股数；其余股数将视为已到可卖日。多个未到期批次请填写最晚买入时间，不得提前解锁。</p
+              >
+              <ElInputNumber
+                v-model="form.pending_quantity"
+                :min="0"
+                :max="form.position_qty"
+                :precision="0"
+                aria-label="待交收股数"
+              />
+              <ElDatePicker
+                v-if="form.pending_quantity > 0"
+                v-model="form.pending_buy_at"
+                type="datetime"
+                value-format="X"
+                placeholder="待交收部分最晚买入时间"
+              />
+            </template> </div></ElFormItem
         ><ElFormItem label="仓位变动记录" v-if="current"
           ><ElRadioGroup v-model="form.record_change"
             ><ElRadio :value="true">记录</ElRadio
@@ -226,7 +257,10 @@
     cost_price: 0,
     leverage: 5,
     buy_at: 0,
-    record_change: false
+    record_change: false,
+    confirm_settlement: false,
+    pending_quantity: 0,
+    pending_buy_at: 0
   })
   const visible = ref(false),
     current = ref<TradePosition | null>(null),
@@ -235,6 +269,8 @@
   const openEditor = (row?: TradePosition) => {
     current.value = row || null
     Object.assign(form, row ? { ...empty(), ...row } : empty())
+    if (row)
+      form.pending_quantity = row.settlement_verified ? (row.unsettled_qty ?? 0) : row.position_qty
     now.value = new Date().toLocaleString('zh-CN', { hour12: false })
     visible.value = true
   }
@@ -246,10 +282,13 @@
     if (form.cost_price <= 0) return ElMessage.warning('持仓均价必须大于 0')
     if (form.position_qty <= 0) return ElMessage.warning('持仓数量必须大于 0')
     if (form.available_qty > form.position_qty) return ElMessage.warning('可用数量不能大于持仓数量')
+    if (form.confirm_settlement && form.pending_quantity > 0 && !form.pending_buy_at)
+      return ElMessage.warning('请填写待交收部分的买入时间')
     await saveTradePosition({
       ...form,
       phone: form.phone.trim(),
       buy_at: Number(form.buy_at) || 0,
+      pending_buy_at: Number(form.pending_buy_at) || 0,
       id: current.value?.id
     })
     ElMessage.success('持仓已保存')

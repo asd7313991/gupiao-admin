@@ -93,7 +93,7 @@
           ><SectionTitle
             mark="▣"
             color="green"
-            title="杠杆和风控"
+            title="孖展和风控"
             desc="A股、港股新建持仓固定5倍孖展；旧持仓和旧挂单转换前保留原规则。追加担保金独立展示，港股风险补仓及强平仅使用港币账户。" /></template
         ><SettingsBlock :editing="editing" :data="setting.risk" :fields="riskFields" /></ElCard
       ><ElCard shadow="never" class="panel"

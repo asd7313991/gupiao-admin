@@ -303,6 +303,10 @@ export function resetAdministratorGoogleAuthSecret(id: number) {
 }
 
 export interface TradePosition {
+  settlement_verified?: boolean
+  unsettled_qty?: number
+  sellable_at?: number
+  settlement_notice?: string
   quantity_basis?: number
   id: number
   customer_id: number
@@ -334,7 +338,14 @@ export function fetchTradePositions(params: {
   return request.get<TradePosition[]>({ url: tradeUrl, params })
 }
 export function saveTradePosition(
-  data: Partial<TradePosition> & { customer_id?: number; phone?: string; symbol: string }
+  data: Partial<TradePosition> & {
+    customer_id?: number
+    phone?: string
+    symbol: string
+    confirm_settlement?: boolean
+    pending_quantity?: number
+    pending_buy_at?: number
+  }
 ) {
   return data.id
     ? request.put<TradePosition>({ url: tradeUrl, params: data })
