@@ -52,8 +52,10 @@
           ><template #default="{ row }">{{ time(row.trade_at) }}</template></ElTableColumn
         ><ElTableColumn label="操作" width="112" fixed="right"
           ><template #default="{ row }"
-            ><ElButton text @click="openEditor(row)">编辑</ElButton
-            ><ElButton text type="danger" @click="remove(row)">删除</ElButton></template
+            ><div class="actions"
+              ><ElButton text @click="openEditor(row)">编辑</ElButton
+              ><ElButton text type="danger" @click="remove(row)">删除</ElButton></div
+            ></template
           ></ElTableColumn
         ></ElTable
       ><div class="pager"
@@ -265,6 +267,16 @@
 
   .profit {
     color: var(--el-color-success);
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 
   :deep(.el-input-number),
