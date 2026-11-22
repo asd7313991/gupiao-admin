@@ -50,9 +50,10 @@
           min-width="140"
         /><ElTableColumn label="时间" min-width="160"
           ><template #default="{ row }">{{ time(row.trade_at) }}</template></ElTableColumn
-        ><ElTableColumn label="操作" width="76" fixed="right"
+        ><ElTableColumn label="操作" width="112" fixed="right"
           ><template #default="{ row }"
-            ><ElButton text @click="openEditor(row)">编辑</ElButton></template
+            ><ElButton text @click="openEditor(row)">编辑</ElButton
+            ><ElButton text type="danger" @click="remove(row)">删除</ElButton></template
           ></ElTableColumn
         ></ElTable
       ><div class="pager"
@@ -124,8 +125,13 @@
   >
 </template>
 <script setup lang="ts">
-  import { ElMessage } from 'element-plus'
-  import { fetchTradeRecords, saveTradeRecord, type TradeRecord } from '@/api/system-manage'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    deleteTradeRecord,
+    fetchTradeRecords,
+    saveTradeRecord,
+    type TradeRecord
+  } from '@/api/system-manage'
   defineOptions({ name: 'TradeRecord' })
   const loading = ref(false),
     rows = ref<TradeRecord[]>([]),
@@ -204,6 +210,17 @@
     ElMessage.success('交易记录已保存')
     visible.value = false
     load()
+  }
+  const remove = async (row: TradeRecord) => {
+    await ElMessageBox.confirm(
+      `确定删除 ${row.stock_name}（${row.symbol}）这条交易记录吗？仅从记录列表移除，不会撤销交易或调整资金、持仓。`,
+      '删除交易记录',
+      { type: 'warning' }
+    )
+    await deleteTradeRecord(row.id)
+    ElMessage.success('交易记录已删除')
+    if (rows.value.length === 1 && page.value > 1) page.value -= 1
+    await load()
   }
   onMounted(load)
 </script>
