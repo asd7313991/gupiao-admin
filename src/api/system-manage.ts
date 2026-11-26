@@ -383,6 +383,7 @@ export interface TradeRecord {
   trade_price: number
   quantity: number
   amount: number
+  quantity_basis: number
   stamp_duty: number
   transfer_fee: number
   commission: number
@@ -414,6 +415,13 @@ export function saveTradeRecord(
 }
 export function deleteTradeRecord(id: number) {
   return request.del<void>({ url: tradeRecordUrl, params: { id } })
+}
+export function adjustTradeRecordBasis(data: {
+  id: number
+  quantity_basis: number
+  reason: string
+}) {
+  return request.put<TradeRecord>({ url: `${tradeRecordUrl}/basis`, params: data })
 }
 
 export interface AppSystemSetting {

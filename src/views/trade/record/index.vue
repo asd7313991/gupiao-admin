@@ -34,6 +34,12 @@
               row.direction
             }}</ElTag></template
           ></ElTableColumn
+        ><ElTableColumn label="成交口径" width="125"
+          ><template #default="{ row }"
+            ><ElTag :type="row.quantity_basis === 1 ? 'success' : 'warning'">{{
+              row.quantity_basis === 1 ? '实际股数' : '历史旧口径'
+            }}</ElTag></template
+          ></ElTableColumn
         ><ElTableColumn prop="trade_price" label="成交价格" /><ElTableColumn
           prop="quantity"
           label="数量"
@@ -50,9 +56,18 @@
           min-width="140"
         /><ElTableColumn label="时间" min-width="160"
           ><template #default="{ row }">{{ time(row.trade_at) }}</template></ElTableColumn
-        ><ElTableColumn label="操作" width="76" fixed="right"
+        ><ElTableColumn label="操作" width="112" fixed="right"
           ><template #default="{ row }"
-            ><ElButton text @click="openEditor(row)">编辑</ElButton></template
+            ><div class="actions"
+              ><ElButton text @click="openEditor(row)">编辑</ElButton>
+              <ElButton
+                v-if="!isHongKongRecord(row)"
+                text
+                type="warning"
+                @click="openBasisEditor(row)"
+                >修正口径</ElButton
+              ><ElButton text type="danger" @click="remove(row)">删除</ElButton></div
+            ></template
           ></ElTableColumn
         ></ElTable
       ><div class="pager"
@@ -120,12 +135,60 @@
         ><ElButton @click="visible = false">取消</ElButton
         ><ElButton type="primary" @click="save">确定</ElButton></template
       ></ElDialog
-    ></div
+    ><ElDialog v-model="basisVisible" title="修正成交口径" width="520px"
+      ><p class="basis-warning">
+        仅修改这条A股成交记录的口径，不会调整成交价、股数、费用、已实现盈亏、余额或持仓。请依据原始成交信息核实后操作。
+      </p>
+      <ElForm label-width="95px">
+        <ElFormItem label="成交记录">
+          <span v-if="basisRecord"
+            >#{{ basisRecord.id }} · {{ basisRecord.stock_name }}（{{ basisRecord.symbol }}）·
+            {{ basisRecord.direction }}</span
+          >
+        </ElFormItem>
+        <ElFormItem label="当前口径">
+          <ElTag
+            v-if="basisRecord"
+            :type="basisRecord.quantity_basis === 1 ? 'success' : 'warning'"
+          >
+            {{ basisRecord.quantity_basis === 1 ? '实际股数' : '历史旧口径' }}
+          </ElTag>
+        </ElFormItem>
+        <ElFormItem label="修正为">
+          <ElSelect v-model="basisForm.quantity_basis">
+            <ElOption label="实际股数" :value="1" />
+            <ElOption label="历史旧口径" :value="0" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="修正原因">
+          <ElInput
+            v-model="basisForm.reason"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            placeholder="填写核对依据，例如原始成交单或后台审核记录"
+          />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="basisVisible = false">取消</ElButton>
+        <ElButton type="warning" :disabled="!basisForm.reason.trim()" @click="saveBasisAdjustment"
+          >确认修正</ElButton
+        >
+      </template>
+    </ElDialog></div
   >
 </template>
 <script setup lang="ts">
-  import { ElMessage } from 'element-plus'
-  import { fetchTradeRecords, saveTradeRecord, type TradeRecord } from '@/api/system-manage'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    deleteTradeRecord,
+    adjustTradeRecordBasis,
+    fetchTradeRecords,
+    saveTradeRecord,
+    type TradeRecord
+  } from '@/api/system-manage'
   defineOptions({ name: 'TradeRecord' })
   const loading = ref(false),
     rows = ref<TradeRecord[]>([]),
@@ -177,6 +240,8 @@
     currencyText = (currency: string) =>
       currency === 'CNY' ? '人民币' : currency === 'HKD' ? '港币' : currency || '--',
     time = (v: number) => new Date(v * 1000).toLocaleString('zh-CN', { hour12: false })
+  const isHongKongRecord = (row: TradeRecord) =>
+    row.currency === 'HKD' || row.symbol.toUpperCase().endsWith('.HK')
   const empty = () => ({
     customer_id: 1,
     symbol: '',
@@ -193,6 +258,31 @@
   const visible = ref(false),
     current = ref<TradeRecord | null>(null),
     form = reactive(empty())
+  const basisVisible = ref(false),
+    basisRecord = ref<TradeRecord | null>(null),
+    basisForm = reactive({ quantity_basis: 1, reason: '' })
+  const openBasisEditor = (row: TradeRecord) => {
+    basisRecord.value = row
+    basisForm.quantity_basis = row.quantity_basis === 1 ? 0 : 1
+    basisForm.reason = ''
+    basisVisible.value = true
+  }
+  const saveBasisAdjustment = async () => {
+    if (!basisRecord.value || !basisForm.reason.trim()) {
+      return ElMessage.warning('请先选择成交记录并填写修正原因')
+    }
+    if (basisForm.quantity_basis === basisRecord.value.quantity_basis) {
+      return ElMessage.warning('修正后的口径与当前口径相同')
+    }
+    await adjustTradeRecordBasis({
+      id: basisRecord.value.id,
+      quantity_basis: basisForm.quantity_basis,
+      reason: basisForm.reason.trim()
+    })
+    ElMessage.success('成交口径已修正并记录审计')
+    basisVisible.value = false
+    await load()
+  }
   const openEditor = (row?: TradeRecord) => {
     current.value = row || null
     Object.assign(form, row ? { ...empty(), ...row } : empty())
@@ -204,6 +294,17 @@
     ElMessage.success('交易记录已保存')
     visible.value = false
     load()
+  }
+  const remove = async (row: TradeRecord) => {
+    await ElMessageBox.confirm(
+      `确定删除 ${row.stock_name}（${row.symbol}）这条交易记录吗？仅从记录列表移除，不会撤销交易或调整资金、持仓。`,
+      '删除交易记录',
+      { type: 'warning' }
+    )
+    await deleteTradeRecord(row.id)
+    ElMessage.success('交易记录已删除')
+    if (rows.value.length === 1 && page.value > 1) page.value -= 1
+    await load()
   }
   onMounted(load)
 </script>
@@ -246,8 +347,24 @@
     color: var(--el-text-color-secondary);
   }
 
+  .basis-warning {
+    margin: 0 0 18px;
+    line-height: 1.6;
+    color: var(--el-color-warning-dark-2);
+  }
+
   .profit {
     color: var(--el-color-success);
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 
   :deep(.el-input-number),
